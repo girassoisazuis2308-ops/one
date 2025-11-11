@@ -146,10 +146,8 @@ const App = {
           <button @click="vida--">−</button>
           <span>{{vida}}</span>
           <button @click="vida++">+</button>
-        </div>
-
-        <div class="field row">
-          <label>Mana</label>
+      
+          <label>| Mana</label>
           <button @click="mana--">−</button>
           <span>{{mana}}</span>
           <button @click="mana++">+</button>
