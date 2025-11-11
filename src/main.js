@@ -17,7 +17,10 @@ const App = {
 
   mounted() {
     OBR.onReady(async () => {
-      const playerId = await OBR.player.getId()
+  console.log("✅ OBR carregado!");
+  const playerId = await OBR.player.getId();
+  console.log("Meu ID:", playerId);
+
 
       // --- Carregar todas as fichas ---
       const metadata = await OBR.room.getMetadata()
