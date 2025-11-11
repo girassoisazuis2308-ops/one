@@ -55,6 +55,7 @@ const App = {
           }
           this.fichas = novas;
         });
+
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
       }
@@ -140,25 +141,16 @@ const App = {
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
-        <!-- 🔹 Painel centralizado de Vida e Mana -->
-        <div class="status-panel">
-          <div class="coluna">
-            <label class="titulo">Vida</label>
-            <div class="contador">
-              <button @click="vida--">−</button>
-              <span>{{vida}}</span>
-              <button @click="vida++">+</button>
-            </div>
-          </div>
-
-          <div class="coluna">
-            <label class="titulo">Mana</label>
-            <div class="contador">
-              <button @click="mana--">−</button>
-              <span>{{mana}}</span>
-              <button @click="mana++">+</button>
-            </div>
-          </div>
+        <div class="field row">
+          <label>Vida</label>
+          <button @click="vida--">−</button>
+          <span>{{vida}}</span>
+          <button @click="vida++">+</button>
+      
+          <label>| Mana</label>
+          <button @click="mana--">−</button>
+          <span>{{mana}}</span>
+          <button @click="mana++">+</button>
         </div>
 
         <div class="field">
@@ -180,7 +172,7 @@ const App = {
         </div>
 
         <div class="field">
-          <label>Inventário</label>
+          <label></label>
           <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
         </div>
       </div>
@@ -189,7 +181,7 @@ const App = {
       <div v-if="page==='master' && isMestre" class="master">
         <h1>FICHAS</h1>
 
-        <button @click="limparFichas" class="limpar-btn">
+        <button @click="limparFichas" style="margin-bottom:10px; background;withe; color:grey; padding:6px 12px; border:none; border-radius:6px;">
           Limpar todas as fichas
         </button>
 
@@ -206,9 +198,9 @@ const App = {
       </div>
 
       <!-- Debug -->
-      <div class="debug">
+      <div style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;">
         <h3>🪲 Debug:</h3>
-        <div v-for="(log, i) in logs" :key="i">{{ log }}</div>
+        <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
       </div>
     </div>
   `,
