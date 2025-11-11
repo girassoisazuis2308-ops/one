@@ -1,3 +1,5 @@
+const { OBR } = window
+
 const App = {
   data() {
     return {
@@ -9,35 +11,27 @@ const App = {
       atributo: 'Força',
       inventario: '',
       fichas: {},
-      salvarTimeout: null // ← controle do debounce
-    };
+      salvarTimeout: null // controle do debounce
+    }
   },
 
   mounted() {
     OBR.onReady(async () => {
-      const playerId = await OBR.player.getId();
+      const playerId = await OBR.player.getId()
 
-      // --- Carregar todas as fichas existentes ---
-      const roomData = await OBR.room.getMetadata();
-      const fichasAtuais = {};
-      for (const [key, value] of Object.entries(roomData)) {
-        if (key.startsWith('ficha-')) fichasAtuais[key] = value;
-      }
-      this.fichas = fichasAtuais;
+      // --- Carrega todas as fichas existentes ---
+      const roomMetadata = await OBR.room.getMetadata()
+      this.atualizarFichas(roomMetadata)
 
-      // --- Carregar a ficha do jogador atual (se existir) ---
-      const minhaFicha = roomData[`ficha-${playerId}`];
-      if (minhaFicha) Object.assign(this, minhaFicha);
+      // --- Carrega a ficha do jogador atual (se existir) ---
+      const minhaFicha = roomMetadata[`ficha-${playerId}`]
+      if (minhaFicha) Object.assign(this, minhaFicha)
 
-      // --- Atualizar automaticamente quando alguma ficha mudar ---
+      // --- Atualiza automaticamente quando metadados mudam ---
       OBR.room.onMetadataChange((metadata) => {
-        const novas = {};
-        for (const [key, value] of Object.entries(metadata)) {
-          if (key.startsWith('ficha-')) novas[key] = value;
-        }
-        this.fichas = novas;
-      });
-    });
+        this.atualizarFichas(metadata)
+      })
+    })
   },
 
   watch: {
@@ -50,13 +44,18 @@ const App = {
   },
 
   methods: {
-    salvarFicha() {
-      // --- Cancela salvamentos anteriores (debounce) ---
-      clearTimeout(this.salvarTimeout);
+    atualizarFichas(metadata) {
+      const novas = {}
+      for (const [key, value] of Object.entries(metadata)) {
+        if (key.startsWith('ficha-')) novas[key] = value
+      }
+      this.fichas = novas
+    },
 
-      // --- Espera 500ms antes de salvar ---
+    salvarFicha() {
+      clearTimeout(this.salvarTimeout)
       this.salvarTimeout = setTimeout(async () => {
-        const playerId = await OBR.player.getId();
+        const playerId = await OBR.player.getId()
         await OBR.room.setMetadata({
           [`ficha-${playerId}`]: {
             nome: this.nome,
@@ -66,12 +65,12 @@ const App = {
             atributo: this.atributo,
             inventario: this.inventario
           }
-        });
-      }, 500);
+        })
+      }, 400) // debounce leve para reduzir lag
     },
 
     trocarPagina(p) {
-      this.page = p;
+      this.page = p
     }
   },
 
@@ -143,6 +142,6 @@ const App = {
       </div>
     </div>
   `
-};
+}
 
-Vue.createApp(App).mount('#app');
+Vue.createApp(App).mount('#app')
