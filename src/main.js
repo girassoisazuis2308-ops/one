@@ -1,77 +1,68 @@
+import OBR from "https://unpkg.com/@owlbear-rodeo/sdk?module";
+
 const App = {
   data() {
     return {
-      page: 'player',
-      nome: '',
+      page: "player",
+      nome: "",
       vida: 10,
       mana: 5,
-      tipo: 'Combatente',
-      atributo: 'Força',
-      inventario: '',
+      tipo: "Combatente",
+      atributo: "Força",
+      inventario: "",
       fichas: {},
       salvarTimeout: null,
-      logs: []
+      logs: [],
     };
   },
 
   mounted() {
-    this.log("🚀 Iniciando app...");
+    this.log("⏳ Aguardando OBR...");
+    OBR.onReady(async () => {
+      this.log("✅ OBR carregado!");
 
-    if (window.OBR && OBR.onReady) {
-      this.log("⏳ Aguardando OBR...");
-      OBR.onReady(async () => {
-        this.log("✅ OBR carregado!");
+      const playerId = await OBR.player.getId();
+      this.log("🎮 Meu ID: " + playerId);
 
-        const playerId = await OBR.player.getId();
-        this.log("🎮 Meu ID: " + playerId);
+      // Carregar fichas
+      const roomData = await OBR.room.getMetadata();
+      const fichasAtuais = {};
+      for (const [key, value] of Object.entries(roomData)) {
+        if (key.startsWith("ficha-")) fichasAtuais[key] = value;
+      }
+      this.fichas = fichasAtuais;
+      this.log("📥 Fichas carregadas: " + Object.keys(fichasAtuais).length);
 
-        // --- Carregar fichas ---
-        const roomData = await OBR.room.getMetadata();
-        const fichasAtuais = {};
-        for (const [key, value] of Object.entries(roomData)) {
-          if (key.startsWith('ficha-')) fichasAtuais[key] = value;
+      // Ficha do jogador atual
+      const minhaFicha = roomData[`ficha-${playerId}`];
+      if (minhaFicha) {
+        Object.assign(this, minhaFicha);
+        this.log("📄 Ficha recuperada da sala");
+      }
+
+      // Atualizações
+      OBR.room.onMetadataChange((metadata) => {
+        const novas = {};
+        for (const [key, value] of Object.entries(metadata)) {
+          if (key.startsWith("ficha-")) novas[key] = value;
         }
-        this.fichas = fichasAtuais;
-        this.log("📥 Fichas carregadas: " + Object.keys(fichasAtuais).length);
-
-        // --- Ficha do jogador atual ---
-        const minhaFicha = roomData[`ficha-${playerId}`];
-        if (minhaFicha) {
-          Object.assign(this, minhaFicha);
-          this.log("📄 Ficha recuperada da sala");
-        }
-
-        // --- Atualizar quando mudar ---
-        OBR.room.onMetadataChange((metadata) => {
-          const novas = {};
-          for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith('ficha-')) novas[key] = value;
-          }
-          this.fichas = novas;
-          this.log("🔄 Fichas atualizadas: " + Object.keys(novas).length);
-        });
+        this.fichas = novas;
+        this.log("🔄 Fichas atualizadas: " + Object.keys(novas).length);
       });
-    } else {
-      this.log("⚠️ OBR não detectado (modo teste local)");
-    }
+    });
   },
 
   watch: {
-    nome: 'salvarFicha',
-    vida: 'salvarFicha',
-    mana: 'salvarFicha',
-    tipo: 'salvarFicha',
-    atributo: 'salvarFicha',
-    inventario: 'salvarFicha'
+    nome: "salvarFicha",
+    vida: "salvarFicha",
+    mana: "salvarFicha",
+    tipo: "salvarFicha",
+    atributo: "salvarFicha",
+    inventario: "salvarFicha",
   },
 
   methods: {
     async salvarFicha() {
-      if (!window.OBR) {
-        this.log("💾 Modo teste: não salvando (fora do Owlbear)");
-        return;
-      }
-
       clearTimeout(this.salvarTimeout);
       this.salvarTimeout = setTimeout(async () => {
         try {
@@ -83,8 +74,8 @@ const App = {
               mana: this.mana,
               tipo: this.tipo,
               atributo: this.atributo,
-              inventario: this.inventario
-            }
+              inventario: this.inventario,
+            },
           });
           this.log("💾 Ficha salva: " + this.nome);
         } catch (e) {
@@ -100,8 +91,7 @@ const App = {
     log(msg) {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
       if (this.logs.length > 20) this.logs.pop();
-      console.log(msg);
-    }
+    },
   },
 
   template: `
@@ -113,6 +103,7 @@ const App = {
 
       <div v-if="page==='player'" class="sheet">
         <h1>Ficha ONE</h1>
+
         <div class="field">
           <label>Nome:</label>
           <input v-model="nome" placeholder="Digite o nome" />
@@ -170,12 +161,13 @@ const App = {
         </div>
       </div>
 
+      <!-- Debug -->
       <div style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;">
         <h3>🪲 Debug:</h3>
         <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
       </div>
     </div>
-  `
+  `,
 };
 
-Vue.createApp(App).mount('#app');
+Vue.createApp(App).mount("#app");
