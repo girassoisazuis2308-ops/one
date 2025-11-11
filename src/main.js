@@ -13,67 +13,53 @@ const App = {
       fichas: {},
       salvarTimeout: null,
       logs: [],
-      isMestre: false, // 👈 nova variável
+      isMestre: false, // 👑 indica se é GM
     };
   },
 
   mounted() {
-  this.log("⏳ Aguardando OBR...");
-  OBR.onReady(async () => {
-    this.log("✅ OBR carregado!");
+    this.log("⏳ Aguardando OBR...");
+    OBR.onReady(async () => {
+      this.log("✅ OBR carregado!");
 
-    try {
-      const playerId = await OBR.player.getId();
-      this.log("🎮 Meu ID: " + playerId);
-
-      // Detecta papel corretamente usando getRole()
       try {
+        const playerId = await OBR.player.getId();
+        this.log("🎮 Meu ID: " + playerId);
+
+        // 🎩 Detecta o papel apenas uma vez
         const role = await OBR.player.getRole();
         this.isMestre = role === "GM";
-        this.log("🎩 Sou mestre? " + this.isMestre);
-      } catch (e) {
-        this.log("⚠️ Não foi possível obter role via getRole(): " + (e.message || e));
-        this.isMestre = false;
-      }
+        this.log("🎩 Papel detectado: " + role);
 
-      // Atualiza se o papel do jogador mudar
-      OBR.player.onChange((player) => {
-        this.isMestre = player.role === "GM";
-        this.log("🎭 Papel atualizado: " + player.role);
-      });
-
-      // Carregar fichas
-      const roomData = await OBR.room.getMetadata();
-      const fichasAtuais = {};
-      for (const [key, value] of Object.entries(roomData)) {
-        if (key.startsWith("ficha-")) fichasAtuais[key] = value;
-      }
-      this.fichas = fichasAtuais;
-      this.log("📥 Fichas carregadas: " + Object.keys(fichasAtuais).length);
-
-      // Ficha do jogador atual
-      const minhaFicha = roomData[`ficha-${playerId}`];
-      if (minhaFicha) {
-        Object.assign(this, minhaFicha);
-        this.log("📄 Ficha recuperada da sala");
-      }
-
-      // Atualizações
-      OBR.room.onMetadataChange((metadata) => {
-        const novas = {};
-        for (const [key, value] of Object.entries(metadata)) {
-          if (key.startsWith("ficha-")) novas[key] = value;
+        // 📥 Carrega fichas atuais
+        const roomData = await OBR.room.getMetadata();
+        const fichasAtuais = {};
+        for (const [key, value] of Object.entries(roomData)) {
+          if (key.startsWith("ficha-")) fichasAtuais[key] = value;
         }
-        this.fichas = novas;
-        this.log("🔄 Fichas atualizadas: " + Object.keys(novas).length);
-      });
+        this.fichas = fichasAtuais;
+        this.log("📦 Fichas carregadas: " + Object.keys(fichasAtuais).length);
 
-    } catch (e) {
-      this.log("❌ Erro na inicialização: " + (e.message || e));
-    }
-  });
-},
+        // 📄 Recupera a ficha do jogador atual
+        const minhaFicha = roomData[`ficha-${playerId}`];
+        if (minhaFicha) {
+          Object.assign(this, minhaFicha);
+          this.log("📄 Ficha restaurada");
+        }
 
+        // 🔄 Atualizações das fichas (sem log redundante)
+        OBR.room.onMetadataChange((metadata) => {
+          const novas = {};
+          for (const [key, value] of Object.entries(metadata)) {
+            if (key.startsWith("ficha-")) novas[key] = value;
+          }
+          this.fichas = novas;
+        });
+      } catch (e) {
+        this.log("❌ Erro na inicialização: " + (e.message || e));
+      }
+    });
+  },
 
   watch: {
     nome: "salvarFicha",
