@@ -134,7 +134,7 @@ const App = {
 
       <!-- Aba do Jogador -->
       <div v-if="page==='player'" class="sheet">
-        <h1>Ficha ONE</h1>
+        <h1>ONE RPG</h1>
 
         <div class="field">
           <label>Nome:</label>
@@ -174,14 +174,14 @@ const App = {
         </div>
 
         <div class="field">
-          <label>Inventário:</label>
+          <label></label>
           <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
         </div>
       </div>
 
       <!-- Aba do Mestre -->
       <div v-if="page==='master' && isMestre" class="master">
-        <h1>Fichas dos Jogadores</h1>
+        <h1>FICHAS</h1>
 
         <button @click="limparFichas" style="margin-bottom:10px; background;withe; color:grey; padding:6px 12px; border:none; border-radius:6px;">
           Limpar todas as fichas
