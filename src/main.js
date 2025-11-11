@@ -137,26 +137,26 @@ const App = {
         <h1>ONE RPG</h1>
 
         <div class="field">
-          <label>Nome:</label>
+          <label>Nome</label>
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
         <div class="field row">
-          <label>Vida:</label>
+          <label>Vida</label>
           <button @click="vida--">−</button>
           <span>{{vida}}</span>
           <button @click="vida++">+</button>
         </div>
 
         <div class="field row">
-          <label>Mana:</label>
+          <label>Mana</label>
           <button @click="mana--">−</button>
           <span>{{mana}}</span>
           <button @click="mana++">+</button>
         </div>
 
         <div class="field">
-          <label>Tipo:</label>
+          <label>Tipo</label>
           <select v-model="tipo">
             <option>Combatente</option>
             <option>Conjurador</option>
@@ -164,7 +164,7 @@ const App = {
         </div>
 
         <div class="field">
-          <label>Atributo:</label>
+          <label>Atributo</label>
           <select v-model="atributo">
             <option>Força</option>
             <option>Destreza</option>
