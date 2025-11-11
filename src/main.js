@@ -17,7 +17,7 @@ const App = {
 
   mounted() {
     OBR.onReady(async () => {
-  console.log("✅ OBR carregado!");
+  alert("OBR carregado!");
   const playerId = await OBR.player.getId();
   console.log("Meu ID:", playerId);
 
