@@ -55,7 +55,6 @@ const App = {
           }
           this.fichas = novas;
         });
-
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
       }
@@ -81,6 +80,141 @@ const App = {
             [`ficha-${playerId}`]: {
               nome: this.nome,
               vida: this.vida,
+              mana: this.mana,
+              tipo: this.tipo,
+              atributo: this.atributo,
+              inventario: this.inventario,
+            },
+          });
+          this.log("💾 Ficha salva: " + this.nome);
+        } catch (e) {
+          this.log("❌ Erro ao salvar: " + e.message);
+        }
+      }, 500);
+    },
+
+    trocarPagina(p) {
+      this.page = p;
+    },
+
+    async limparFichas() {
+      if (!this.isMestre) return;
+      if (!confirm("Tem certeza que deseja limpar todas as fichas dos jogadores?")) return;
+
+      try {
+        const roomData = await OBR.room.getMetadata();
+        const updates = {};
+        for (const key of Object.keys(roomData)) {
+          if (key.startsWith("ficha-")) {
+            updates[key] = undefined; // apagar metadado
+          }
+        }
+
+        await OBR.room.setMetadata(updates);
+        this.fichas = {}; // limpar localmente também
+        this.log("🧹 Todas as fichas foram limpas!");
+      } catch (e) {
+        this.log("❌ Erro ao limpar fichas: " + (e.message || e));
+      }
+    },
+
+    log(msg) {
+      this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
+      if (this.logs.length > 20) this.logs.pop();
+    },
+  },
+
+  template: `
+    <div>
+      <nav>
+        <button :class="{active: page==='player'}" @click="trocarPagina('player')">Jogador</button>
+        <button v-if="isMestre" :class="{active: page==='master'}" @click="trocarPagina('master')">Mestre</button>
+      </nav>
+
+      <!-- Aba do Jogador -->
+      <div v-if="page==='player'" class="sheet">
+        <h1>ONE RPG</h1>
+
+        <div class="field">
+          <label>Nome</label>
+          <input v-model="nome" placeholder="Digite o nome" />
+        </div>
+
+        <!-- 🔹 Painel centralizado de Vida e Mana -->
+        <div class="status-panel">
+          <div class="coluna">
+            <label class="titulo">Vida</label>
+            <div class="contador">
+              <button @click="vida--">−</button>
+              <span>{{vida}}</span>
+              <button @click="vida++">+</button>
+            </div>
+          </div>
+
+          <div class="coluna">
+            <label class="titulo">Mana</label>
+            <div class="contador">
+              <button @click="mana--">−</button>
+              <span>{{mana}}</span>
+              <button @click="mana++">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipo</label>
+          <select v-model="tipo">
+            <option>Combatente</option>
+            <option>Conjurador</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Atributo</label>
+          <select v-model="atributo">
+            <option>Força</option>
+            <option>Destreza</option>
+            <option>Intelecto</option>
+            <option>Vigor</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Inventário</label>
+          <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
+        </div>
+      </div>
+
+      <!-- Aba do Mestre -->
+      <div v-if="page==='master' && isMestre" class="master">
+        <h1>FICHAS</h1>
+
+        <button @click="limparFichas" class="limpar-btn">
+          Limpar todas as fichas
+        </button>
+
+        <div v-if="Object.keys(fichas).length === 0">
+          Nenhum jogador conectado ainda.
+        </div>
+
+        <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
+          <h2>{{ ficha.nome || 'Sem nome' }}</h2>
+          <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
+          <p>{{ ficha.tipo }}</p>
+          <p>{{ ficha.inventario }}</p>
+        </div>
+      </div>
+
+      <!-- Debug -->
+      <div class="debug">
+        <h3>🪲 Debug:</h3>
+        <div v-for="(log, i) in logs" :key="i">{{ log }}</div>
+      </div>
+    </div>
+  `,
+};
+
+Vue.createApp(App).mount("#app");
               mana: this.mana,
               tipo: this.tipo,
               atributo: this.atributo,
