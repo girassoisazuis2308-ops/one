@@ -18,18 +18,25 @@ const App = {
   },
 
   mounted() {
-    this.log("⏳ Aguardando OBR...");
-    OBR.onReady(async () => {
-      this.log("✅ OBR carregado!");
+  this.log("⏳ Aguardando OBR...");
+  OBR.onReady(async () => {
+    this.log("✅ OBR carregado!");
 
+    try {
       const playerId = await OBR.player.getId();
       this.log("🎮 Meu ID: " + playerId);
 
-      // 👇 verifica se é o mestre
-      this.isMestre = await OBR.player.isGM();
-      this.log("🎩 Sou mestre? " + this.isMestre);
+      // Detecta papel corretamente usando getRole()
+      try {
+        const role = await OBR.player.getRole();
+        this.isMestre = role === "GM";
+        this.log("🎩 Sou mestre? " + this.isMestre);
+      } catch (e) {
+        this.log("⚠️ Não foi possível obter role via getRole(): " + (e.message || e));
+        this.isMestre = false;
+      }
 
-      // (Opcional) Atualiza se o papel mudar
+      // Atualiza se o papel do jogador mudar
       OBR.player.onChange((player) => {
         this.isMestre = player.role === "GM";
         this.log("🎭 Papel atualizado: " + player.role);
@@ -60,8 +67,13 @@ const App = {
         this.fichas = novas;
         this.log("🔄 Fichas atualizadas: " + Object.keys(novas).length);
       });
-    });
-  },
+
+    } catch (e) {
+      this.log("❌ Erro na inicialização: " + (e.message || e));
+    }
+  });
+},
+
 
   watch: {
     nome: "salvarFicha",
