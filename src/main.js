@@ -1,3 +1,5 @@
+import OBR from "@owlbear-rodeo/sdk";
+
 const App = {
   data() {
     return {
