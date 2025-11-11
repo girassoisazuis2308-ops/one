@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8">
+    <title>Ficha ONE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Vue via CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Owlbear Rodeo SDK -->
+    <script src="https://unpkg.com/@owlbear-rodeo/sdk"></script>
+    <style>
+      body { margin: 0; font-family: sans-serif; background:#101010; color:white; }
+      nav { display:flex; justify-content:center; gap:10px; margin-bottom:12px; }
+      nav button { padding:4px 8px; border-radius:6px; background:#333; color:white; border:none; cursor:pointer; }
+      nav button.active { background:#555; }
+      .sheet, .master { max-width:400px; margin:auto; padding:16px; background:#1a1a1a; border-radius:16px; }
+      .field { margin-bottom:12px; display:flex; flex-direction:column; }
+      .field.row { flex-direction:row; align-items:center; gap:8px; }
+      input, select, textarea, button { border:none; border-radius:6px; padding:6px; background:#333; color:white; }
+      .ficha { background:#222; padding:12px; border-radius:12px; margin-bottom:12px; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

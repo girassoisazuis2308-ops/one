@@ -1,0 +1,13 @@
+{
+  "name": "ONE Sheet",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "Bonykou",
+  "action": {
+    "title": "ONE Sheet",
+    "icon": "/icon.svg",
+    "popover": "/",
+    "width": 450,
+    "height": 520
+  }
+}

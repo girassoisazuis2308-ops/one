@@ -1,0 +1,27 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  fill="none"
+  stroke="white"
+  stroke-width="2.5"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <!-- pétala central -->
+  <path d="M32 8 L37 26 Q32 38 27 26 Z" fill="#222"/>
+
+  <!-- pétala esquerda -->
+  <path d="M27 12 L20 26 Q26 36 29 28 Z" fill="#222"/>
+
+  <!-- pétala direita -->
+  <path d="M37 12 L44 26 Q38 36 35 28 Z" fill="#222"/>
+
+  <!-- pétala externa esquerda -->
+  <path d="M18 26 L12 36 Q20 46 26 38 Z" fill="#222"/>
+
+  <!-- pétala externa direita -->
+  <path d="M46 26 L52 36 Q44 46 38 38 Z" fill="#222"/>
+
+  <!-- base curvada -->
+  <path d="M16 42 Q32 54 48 42" stroke="white" fill="none"/>
+</svg>
