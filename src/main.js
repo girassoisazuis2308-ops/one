@@ -13,6 +13,7 @@ const App = {
       fichas: {},
       salvarTimeout: null,
       logs: [],
+      isMestre: false, // 👈 nova variável
     };
   },
 
@@ -23,6 +24,16 @@ const App = {
 
       const playerId = await OBR.player.getId();
       this.log("🎮 Meu ID: " + playerId);
+
+      // 👇 verifica se é o mestre
+      this.isMestre = await OBR.player.isGM();
+      this.log("🎩 Sou mestre? " + this.isMestre);
+
+      // (Opcional) Atualiza se o papel mudar
+      OBR.player.onChange((player) => {
+        this.isMestre = player.role === "GM";
+        this.log("🎭 Papel atualizado: " + player.role);
+      });
 
       // Carregar fichas
       const roomData = await OBR.room.getMetadata();
@@ -98,9 +109,10 @@ const App = {
     <div>
       <nav>
         <button :class="{active: page==='player'}" @click="trocarPagina('player')">Jogador</button>
-        <button :class="{active: page==='master'}" @click="trocarPagina('master')">Mestre</button>
+        <button v-if="isMestre" :class="{active: page==='master'}" @click="trocarPagina('master')">Mestre</button>
       </nav>
 
+      <!-- Aba do Jogador -->
       <div v-if="page==='player'" class="sheet">
         <h1>Ficha ONE</h1>
 
@@ -147,7 +159,8 @@ const App = {
         </div>
       </div>
 
-      <div v-else class="master">
+      <!-- Aba do Mestre -->
+      <div v-if="page==='master' && isMestre" class="master">
         <h1>Fichas dos Jogadores</h1>
         <div v-if="Object.keys(fichas).length === 0">
           Nenhum jogador conectado ainda.
