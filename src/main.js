@@ -55,6 +55,7 @@ const App = {
           }
           this.fichas = novas;
         });
+
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
       }
@@ -133,36 +134,29 @@ const App = {
 
       <!-- Aba do Jogador -->
       <div v-if="page==='player'" class="sheet">
-        <h1>ONE RPG</h1>
+        <h1>Ficha ONE</h1>
 
         <div class="field">
-          <label>Nome</label>
+          <label>Nome:</label>
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
-        <!-- 🔹 Painel centralizado de Vida e Mana -->
-        <div class="status-panel">
-          <div class="coluna">
-            <label class="titulo">Vida</label>
-            <div class="contador">
-              <button @click="vida--">−</button>
-              <span>{{vida}}</span>
-              <button @click="vida++">+</button>
-            </div>
-          </div>
+        <div class="field row">
+          <label>Vida:</label>
+          <button @click="vida--">−</button>
+          <span>{{vida}}</span>
+          <button @click="vida++">+</button>
+        </div>
 
-          <div class="coluna">
-            <label class="titulo">Mana</label>
-            <div class="contador">
-              <button @click="mana--">−</button>
-              <span>{{mana}}</span>
-              <button @click="mana++">+</button>
-            </div>
-          </div>
+        <div class="field row">
+          <label>Mana:</label>
+          <button @click="mana--">−</button>
+          <span>{{mana}}</span>
+          <button @click="mana++">+</button>
         </div>
 
         <div class="field">
-          <label>Tipo</label>
+          <label>Tipo:</label>
           <select v-model="tipo">
             <option>Combatente</option>
             <option>Conjurador</option>
@@ -170,7 +164,7 @@ const App = {
         </div>
 
         <div class="field">
-          <label>Atributo</label>
+          <label>Atributo:</label>
           <select v-model="atributo">
             <option>Força</option>
             <option>Destreza</option>
@@ -180,17 +174,17 @@ const App = {
         </div>
 
         <div class="field">
-          <label>Inventário</label>
+          <label>Inventário:</label>
           <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
         </div>
       </div>
 
       <!-- Aba do Mestre -->
       <div v-if="page==='master' && isMestre" class="master">
-        <h1>FICHAS</h1>
+        <h1>Fichas dos Jogadores</h1>
 
-        <button @click="limparFichas" class="limpar-btn">
-          Limpar todas as fichas
+        <button @click="limparFichas" style="margin-bottom:10px; background:#a00; color:white; padding:6px 12px; border:none; border-radius:6px;">
+          🧹 Limpar todas as fichas
         </button>
 
         <div v-if="Object.keys(fichas).length === 0">
@@ -206,9 +200,9 @@ const App = {
       </div>
 
       <!-- Debug -->
-      <div class="debug">
+      <div style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;">
         <h3>🪲 Debug:</h3>
-        <div v-for="(log, i) in logs" :key="i">{{ log }}</div>
+        <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
       </div>
     </div>
   `,
