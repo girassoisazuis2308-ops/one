@@ -8,27 +8,38 @@ const App = {
       tipo: 'Combatente',
       atributo: 'Força',
       inventario: '',
-      fichas: {}
-    }
+      fichas: {},
+      salvarTimeout: null // ← controle do debounce
+    };
   },
+
   mounted() {
     OBR.onReady(async () => {
       const playerId = await OBR.player.getId();
-      // Carregar ficha se existir
-      const roomData = await OBR.room.getMetadata();
-      const ficha = roomData[`ficha-${playerId}`];
-      if(ficha) Object.assign(this, ficha);
 
-      // Atualizar fichas quando mudarem
-      OBR.room.onChange((metadata) => {
+      // --- Carregar todas as fichas existentes ---
+      const roomData = await OBR.room.getMetadata();
+      const fichasAtuais = {};
+      for (const [key, value] of Object.entries(roomData)) {
+        if (key.startsWith('ficha-')) fichasAtuais[key] = value;
+      }
+      this.fichas = fichasAtuais;
+
+      // --- Carregar a ficha do jogador atual (se existir) ---
+      const minhaFicha = roomData[`ficha-${playerId}`];
+      if (minhaFicha) Object.assign(this, minhaFicha);
+
+      // --- Atualizar automaticamente quando alguma ficha mudar ---
+      OBR.room.onMetadataChange((metadata) => {
         const novas = {};
-        for (const [key, value] of Object.entries(metadata.metadata || {})) {
-          if(key.startsWith('ficha-')) novas[key] = value;
+        for (const [key, value] of Object.entries(metadata)) {
+          if (key.startsWith('ficha-')) novas[key] = value;
         }
         this.fichas = novas;
       });
     });
   },
+
   watch: {
     nome: 'salvarFicha',
     vida: 'salvarFicha',
@@ -37,21 +48,33 @@ const App = {
     atributo: 'salvarFicha',
     inventario: 'salvarFicha'
   },
+
   methods: {
     salvarFicha() {
-      OBR.player.getId().then(playerId => {
-        OBR.room.setMetadata({ [`ficha-${playerId}`]: {
-          nome: this.nome,
-          vida: this.vida,
-          mana: this.mana,
-          tipo: this.tipo,
-          atributo: this.atributo,
-          inventario: this.inventario
-        }});
-      });
+      // --- Cancela salvamentos anteriores (debounce) ---
+      clearTimeout(this.salvarTimeout);
+
+      // --- Espera 500ms antes de salvar ---
+      this.salvarTimeout = setTimeout(async () => {
+        const playerId = await OBR.player.getId();
+        await OBR.room.setMetadata({
+          [`ficha-${playerId}`]: {
+            nome: this.nome,
+            vida: this.vida,
+            mana: this.mana,
+            tipo: this.tipo,
+            atributo: this.atributo,
+            inventario: this.inventario
+          }
+        });
+      }, 500);
     },
-    trocarPagina(p) { this.page = p; }
+
+    trocarPagina(p) {
+      this.page = p;
+    }
   },
+
   template: `
     <div>
       <nav>
@@ -61,26 +84,65 @@ const App = {
 
       <div v-if="page==='player'" class="sheet">
         <h1>Ficha ONE</h1>
-        <div class="field"><label>Nome:</label><input v-model="nome" placeholder="Digite o nome"/></div>
-        <div class="field row"><label>Vida:</label><button @click="vida--">−</button><span>{{vida}}</span><button @click="vida++">+</button></div>
-        <div class="field row"><label>Mana:</label><button @click="mana--">−</button><span>{{mana}}</span><button @click="mana++">+</button></div>
-        <div class="field"><label>Tipo:</label><select v-model="tipo"><option>Combatente</option><option>Conjurador</option></select></div>
-        <div class="field"><label>Atributo:</label><select v-model="atributo"><option>Força</option><option>Destreza</option><option>Intelecto</option><option>Vigor</option></select></div>
-        <div class="field"><label>Inventário:</label><textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea></div>
+
+        <div class="field">
+          <label>Nome:</label>
+          <input v-model="nome" placeholder="Digite o nome" />
+        </div>
+
+        <div class="field row">
+          <label>Vida:</label>
+          <button @click="vida--">−</button>
+          <span>{{vida}}</span>
+          <button @click="vida++">+</button>
+        </div>
+
+        <div class="field row">
+          <label>Mana:</label>
+          <button @click="mana--">−</button>
+          <span>{{mana}}</span>
+          <button @click="mana++">+</button>
+        </div>
+
+        <div class="field">
+          <label>Tipo:</label>
+          <select v-model="tipo">
+            <option>Combatente</option>
+            <option>Conjurador</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Atributo:</label>
+          <select v-model="atributo">
+            <option>Força</option>
+            <option>Destreza</option>
+            <option>Intelecto</option>
+            <option>Vigor</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Inventário:</label>
+          <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
+        </div>
       </div>
 
       <div v-else class="master">
         <h1>Fichas dos Jogadores</h1>
-        <div v-if="Object.keys(fichas).length===0">Nenhum jogador conectado ainda.</div>
-        <div v-for="(ficha,id) in fichas" :key="id" class="ficha">
-          <h2>{{ficha.nome||'Sem nome'}}</h2>
-          <p>Vida: {{ficha.vida}} | Mana: {{ficha.mana}} | {{ficha.atributo}}</p>
-          <p>{{ficha.tipo}}</p>
-          <p>{{ficha.inventario}}</p>
+        <div v-if="Object.keys(fichas).length === 0">
+          Nenhum jogador conectado ainda.
+        </div>
+
+        <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
+          <h2>{{ ficha.nome || 'Sem nome' }}</h2>
+          <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
+          <p>{{ ficha.tipo }}</p>
+          <p>{{ ficha.inventario }}</p>
         </div>
       </div>
     </div>
   `
-}
+};
 
-Vue.createApp(App).mount('#app')
+Vue.createApp(App).mount('#app');
