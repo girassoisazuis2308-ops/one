@@ -141,19 +141,25 @@ const App = {
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
-        <div class="field row">
-          <label>Vida:</label>
-          <button @click="vida--">−</button>
-          <span>{{vida}}</span>
-          <button @click="vida++">+</button>
-        </div>
+       <div class="stats-row">
+  <div class="stat-box">
+    <span class="label">Vida</span>
+    <div class="stat-controls">
+      <button @click="vida--">−</button>
+      <span class="value">{{ vida }}</span>
+      <button @click="vida++">+</button>
+    </div>
+  </div>
 
-        <div class="field row">
-          <label>Mana:</label>
-          <button @click="mana--">−</button>
-          <span>{{mana}}</span>
-          <button @click="mana++">+</button>
-        </div>
+  <div class="stat-box">
+    <span class="label">Mana</span>
+    <div class="stat-controls">
+      <button @click="mana--">−</button>
+      <span class="value">{{ mana }}</span>
+      <button @click="mana++">+</button>
+    </div>
+  </div>
+</div>
 
         <div class="field">
           <label>Tipo:</label>
