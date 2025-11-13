@@ -129,6 +129,55 @@
       .ficha p {
         margin: 2px 0;
   }
+      /* Vida / Mana lado a lado */
+.stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.stat-box {
+  flex: 1;
+  background: #222;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+/* Texto do título (Vida/Mana) */
+.stat-box .label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Área com número e botões */
+.stat-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* Botões menores e redondos */
+.stat-controls button {
+  width: 30px;
+  height: 30px;
+  background: #3A6BFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Número em destaque */
+.stat-controls .value {
+  font-size: 20px;
+  font-weight: bold;
+}
+
 </style>
 
     
