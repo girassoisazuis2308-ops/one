@@ -10,63 +10,128 @@
 
     <style>
       body {
+        font-family: "Inter", sans-serif;
+        background: #e5e7eb;
         margin: 0;
-        font-family: sans-serif;
-        background: #101010;
-        color: white;
+        padding: 0;
+  }
+
+      #app {
+        max-width: 900px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        margin-top: 20px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
       }
+
       nav {
         display: flex;
-        justify-content: center;
         gap: 10px;
-        margin-bottom: 12px;
-      }
+        margin-bottom: 20px;
+  }
+
       nav button {
-        padding: 4px 8px;
-        border-radius: 6px;
-        background: #333;
-        color: white;
+        flex: 1;
+        padding: 10px;
+        background: #d1d5db;
         border: none;
+        border-radius: 10px;
+        font-weight: 600;
         cursor: pointer;
-      }
+        transition: 0.2s;
+  }
+
       nav button.active {
-        background: #555;
-      }
-      .sheet,
-      .master {
-        max-width: 400px;
-        margin: auto;
-        padding: 16px;
-        background: #1a1a1a;
-        border-radius: 16px;
-      }
-      .field {
-        margin-bottom: 12px;
+        background: #2563eb;
+        color: white;
+  }
+
+      h1 {
+        margin-top: 0;
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: #111827;
+  }
+
+      .sheet, .master {
         display: flex;
         flex-direction: column;
-      }
-      .field.row {
-        flex-direction: row;
-        align-items: center;
-        gap: 8px;
-      }
-      input,
-      select,
-      textarea,
-      button {
-        border: none;
-        border-radius: 6px;
-        padding: 6px;
-        background: #333;
-        color: white;
-      }
-      .ficha {
-        background: #222;
-        padding: 12px;
+        gap: 20px;
+  }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        background: #f9fafb;
+        border: 1px solid #d1d5db;
         border-radius: 12px;
-        margin-bottom: 12px;
-      }
-    </style>
+        padding: 12px;
+  }
+
+      .field label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #374151;
+  }
+
+      input, select, textarea {
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        font-size: 15px;
+        background: white;
+  }
+
+      textarea {
+        resize: none;
+  }
+
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+  }
+
+      .row button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+  }
+
+      .row span {
+        font-size: 20px;
+        font-weight: bold;
+        width: 40px;
+        text-align: center;
+  }
+
+  /* Box das fichas do mestre */
+      .ficha {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 10px;
+  }
+
+      .ficha h2 {
+        margin: 0 0 5px 0;
+        font-size: 18px;
+        font-weight: 700;
+  }
+
+      .ficha p {
+        margin: 2px 0;
+  }
+</style>
+
+    
   </head>
   <body>
     <div id="app"></div>
