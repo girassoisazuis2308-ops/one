@@ -187,14 +187,7 @@ rolarD4() {
     </div>
   </div>
 
-
-        <div class="field">
-          <label>Inventário:</label>
-          <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
-        </div>
-      </div>
-
-      <!-- ROLAGEM DE DADOS -->
+        <!-- ROLAGEM DE DADOS -->
 <div class="stats-row">
   <div class="stat-box" style="padding: 14px;">
     <label class="label" style="margin-bottom:6px; display:block;">🎲 D10</label>
@@ -219,6 +212,11 @@ rolarD4() {
   </div>
 </div>
 
+        <div class="field">
+          <label>Inventário:</label>
+          <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
+        </div>
+      </div>
 
       <!-- Aba do Mestre -->
       <div v-if="page==='master' && isMestre" class="master">
