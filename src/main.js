@@ -152,26 +152,27 @@ const App = {
           </div>
         </div>
 
-        <!-- TIPO + ATRIBUTO (lado a lado igual Vida/Mana) -->
-        <div class="stats-row">
-          <div class="stat-box">
-            <span class="label">Tipo</span>
-            <select v-model="tipo" style="margin-top:6px;">
-              <option>Combatente</option>
-              <option>Conjurador</option>
-            </select>
-          </div>
+        <!-- TIPO + ATRIBUTO lado a lado, com o texto ACIMA do select -->
+    <div class="stats-row">
+    <div class="stat-box" style="text-align:left;">
+      <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
+      <select v-model="tipo" style="width:100%;">
+        <option>Combatente</option>
+        <option>Conjurador</option>
+      </select>
+    </div>
+  
+    <div class="stat-box" style="text-align:left;">
+      <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
+      <select v-model="atributo" style="width:100%;">
+        <option>Força</option>
+        <option>Destreza</option>
+        <option>Intelecto</option>
+        <option>Vigor</option>
+      </select>
+    </div>
+  </div>
 
-          <div class="stat-box">
-            <span class="label">Atributo</span>
-            <select v-model="atributo" style="margin-top:6px;">
-              <option>Força</option>
-              <option>Destreza</option>
-              <option>Intelecto</option>
-              <option>Vigor</option>
-            </select>
-          </div>
-        </div>
 
         <div class="field">
           <label>Inventário:</label>
