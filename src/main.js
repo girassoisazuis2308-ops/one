@@ -210,7 +210,7 @@ rolarD4() {
 <!-- Resultado -->
 <div class="field" v-if="ultimoResultado !== null">
   <label>Resultado</label>
-  <div style="font-size:22px; font-weight:bold; margin-top:4px;">
+  <div style="font-size:22px; font-weight:bold; margin-top:4px;textalign:center;">
     {{ ultimoResultado }}
   </div>
 </div>
