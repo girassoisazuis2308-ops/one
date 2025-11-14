@@ -118,7 +118,7 @@ const App = {
       this.rolando = true;
 
       // toca som de dado caindo
-      const audio = new Audio('https://www.soundjay.com/misc/sounds/dice-roll-1.mp3');
+      const audio = new Audio('./roll-of-dice.mp3');
       audio.play();
 
       // delay de 2 segundos
