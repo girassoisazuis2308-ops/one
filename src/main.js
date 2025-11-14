@@ -55,16 +55,17 @@ const App = {
           const novas = {};
           for (const [key, value] of Object.entries(metadata)) {
             if (key.startsWith("ficha-")) {
-              // garante que ultimasRolagens seja sempre array
+              // converte ultimasRolagens de string para array se necessário
               if (value.ultimasRolagens && typeof value.ultimasRolagens === 'string') {
                 value.ultimasRolagens = value.ultimasRolagens.split('|');
+              } else if (!Array.isArray(value.ultimasRolagens)) {
+                value.ultimasRolagens = [];
               }
               novas[key] = value;
             }
           }
           this.fichas = novas;
         });
-
 
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
@@ -280,8 +281,9 @@ const App = {
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
           <p><strong>Rolagens:</strong> 
-            {{ ficha.ultimasRolagens ? ficha.ultimasRolagens.split('|').join(' | ') : '—' }}
+            {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}
           </p>
+
 
         </div>
       </div>
