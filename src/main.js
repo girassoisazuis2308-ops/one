@@ -147,7 +147,7 @@ rolarD4() {
         <h1>Ficha ONE</h1>
 
         <div class="field">
-          <label>Nome:</label>
+          <label>Nome</label>
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
@@ -174,7 +174,7 @@ rolarD4() {
 
         <!-- TIPO + ATRIBUTO lado a lado, com o texto ACIMA do select -->
     <div class="stats-row">
-    <div class="stat-box" style="text-align:left;">
+    <div class="stat-box" style="text-align:center;">
       <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
       <select v-model="tipo" style="width:100%;">
         <option>Combatente</option>
@@ -182,7 +182,7 @@ rolarD4() {
       </select>
     </div>
   
-    <div class="stat-box" style="text-align:left;">
+    <div class="stat-box" style="text-align:center;">
       <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
       <select v-model="atributo" style="width:100%;">
         <option>Força</option>
@@ -217,7 +217,7 @@ rolarD4() {
 </div>
 
         <div class="field">
-          <label>Inventário:</label>
+          <label>Inventário</label>
           <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
         </div>
       </div>
