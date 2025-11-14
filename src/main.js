@@ -196,13 +196,13 @@ rolarD4() {
         <!-- ROLAGEM DE DADOS -->
 <div class="stats-row">
   <div class="stat-box" style="padding: 14px;">
-    <button @click="rolarD10" style="width:100%; padding:8px; border-radius:8px; border:none; background:#252634; color:white; font-weight:700;">
+    <button @click="rolarD10" style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700;">
       Rolar D10
     </button>
   </div>
 
   <div class="stat-box" style="padding: 14px;">
-    <button @click="rolarD4" style="width:100%; padding:8px; border-radius:8px; border:none; background:#252634; color:white; font-weight:700;">
+    <button @click="rolarD4" style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700;">
       Rolar D4
     </button>
   </div>
