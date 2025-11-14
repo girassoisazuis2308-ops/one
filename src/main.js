@@ -104,7 +104,7 @@ const App = {
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
         }
-      }, 500);
+      }, 700);
     },
 
     trocarPagina(p) {
