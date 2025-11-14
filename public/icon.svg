@@ -1,27 +1,7 @@
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 64 64"
-  fill="none"
-  stroke="white"
-  stroke-width="2.5"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <!-- pétala central -->
-  <path d="M32 8 L37 26 Q32 38 27 26 Z" fill="#222"/>
-
-  <!-- pétala esquerda -->
-  <path d="M27 12 L20 26 Q26 36 29 28 Z" fill="#222"/>
-
-  <!-- pétala direita -->
-  <path d="M37 12 L44 26 Q38 36 35 28 Z" fill="#222"/>
-
-  <!-- pétala externa esquerda -->
-  <path d="M18 26 L12 36 Q20 46 26 38 Z" fill="#222"/>
-
-  <!-- pétala externa direita -->
-  <path d="M46 26 L52 36 Q44 46 38 38 Z" fill="#222"/>
-
-  <!-- base curvada -->
-  <path d="M16 42 Q32 54 48 42" stroke="white" fill="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <path d="M 210 0 Q 212 -10 198 -12 Q 192 -12 188 -7 L 2 237 L 2 237 Q 0 240 0 244 Q 2 255 13 254 L 131 228 L 131 228 Q 139 226 143 218 L 210 0 L 210 0 Z 
+           M 9 288 Q 1 291 0 299 Q 0 304 4 307 L 221 509 L 221 509 Q 224 512 229 512 Q 239 511 240 501 L 240 329 L 240 329 Q 240 320 233 316 L 154 261 L 154 261 Q 149 257 142 259 L 9 288 L 9 288 Z 
+           M 272 501 Q 273 511 284 512 Q 288 512 291 509 L 508 307 L 508 307 Q 512 304 512 299 Q 511 291 503 288 L 370 259 L 370 259 Q 363 257 358 261 L 279 316 L 279 316 Q 272 321 272 329 L 272 501 L 272 501 Z 
+           M 499 254 Q 510 255 512 244 Q 512 240 510 237 L 324 0 L 324 0 Q 320 -10 314 -12 Q 300 -10 302 0 L 370 218 L 370 218 Q 373 226 381 228 L 499 255 L 499 254 Z 
+           M 247 -5 L 175 222 L 247 -5 L 175 222 Q 172 233 181 241 L 247 286 L 247 286 Q 256 292 265 286 L 331 241 L 331 241 Q 340 233 337 222 L 265 -5 L 265 -5 Q 263 -12 256 -12 Q 249 -12 247 -5 L 247 -5 Z" />
 </svg>
