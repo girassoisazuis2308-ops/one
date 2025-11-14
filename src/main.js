@@ -205,12 +205,15 @@ const App = {
         </div>
       </div>
 
-      <!-- Debug -->
-      <div style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;">
-        <h3>🪲 Debug:</h3>
-        <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
-      </div>
+    <!-- Debug (somente para Mestre) -->
+    <div 
+      v-if="page === 'master' && isMestre"
+      style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
+    >
+      <h3>🪲 Debug:</h3>
+      <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
     </div>
+
   `,
 };
 
