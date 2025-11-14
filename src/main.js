@@ -195,14 +195,14 @@ rolarD4() {
         <!-- ROLAGEM DE DADOS -->
 <div class="stats-row">
   <div class="stat-box" style="padding: 14px;">
-    <label class="label" style="margin-bottom:6px; display:block;">🎲 D10</label>
+    <label class="label" style="margin-bottom:6px; display:block;">D10</label>
     <button @click="rolarD10" style="width:100%; padding:8px; border-radius:8px; border:none; background:#3B82F6; color:white; font-weight:700;">
       Rolar D10
     </button>
   </div>
 
   <div class="stat-box" style="padding: 14px;">
-    <label class="label" style="margin-bottom:6px; display:block;">🎲 D4</label>
+    <label class="label" style="margin-bottom:6px; display:block;">D4</label>
     <button @click="rolarD4" style="width:100%; padding:8px; border-radius:8px; border:none; background:#3B82F6; color:white; font-weight:700;">
       Rolar D4
     </button>
@@ -211,7 +211,7 @@ rolarD4() {
 
 <!-- Resultado -->
 <div class="field" v-if="ultimoResultado !== null">
-  <label>🎯 Resultado da rolagem:</label>
+  <label>Resultado</label>
   <div style="font-size:22px; font-weight:bold; margin-top:4px;">
     {{ ultimoResultado }}
   </div>
@@ -228,7 +228,7 @@ rolarD4() {
         <h1>Fichas dos Jogadores</h1>
 
         <button @click="limparFichas" style="margin-bottom:10px; background:#a00; color:white; padding:6px 12px; border:none; border-radius:6px;">
-          🧹 Limpar todas as fichas
+          Limpar
         </button>
 
         <div v-if="Object.keys(fichas).length === 0">
@@ -240,7 +240,7 @@ rolarD4() {
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
-          <p><strong>🎲 Última rolagem:</strong> {{ ficha.ultimoResultado || '—' }}</p>
+          <p><strong>Rolagem:</strong> {{ ficha.ultimoResultado || '—' }}</p>
         </div>
       </div>
 
