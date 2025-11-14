@@ -226,9 +226,28 @@ rolarD4() {
       <div v-if="page==='master' && isMestre" class="master">
         <h1>PERSONAGENS</h1>
 
-        <button @click="limparFichas" style="weight:50px;margin-bottom:10px; background:#a00; color:white; padding:6px 12px; border:none; border-radius:6px;">
-          Limpar
-        </button>
+        <div style="text-align: center; margin-bottom: 10px;">
+  <button 
+    @click="limparFichas" 
+    style="
+      width: 80px;               /* botão pequeno */
+      padding: 4px 8px;          /* reduz o padding */
+      background: linear-gradient(135deg, #7C5CFF, #9B7BFF); /* gradiente roxo Owlbear */
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    "
+    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
+    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
+  >
+    Limpar
+  </button>
+</div>
+
 
         <div v-if="Object.keys(fichas).length === 0">
           Nenhum jogador conectado ainda.
