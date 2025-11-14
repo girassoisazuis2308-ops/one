@@ -145,7 +145,7 @@ const App = {
 
       // atualiza histórico
       this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
-      if (this.ultimasRolagens.length > 2) this.ultimasRolagens.pop();
+      if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
       this.ultimoResultado = this.ultimasRolagens[0];
 
       this.salvarFicha();
