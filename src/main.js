@@ -26,28 +26,20 @@ const App = {
         const playerId = await OBR.player.getId();
         this.log("🎮 Meu ID: " + playerId);
 
-        // Detecta papel apenas uma vez
         const role = await OBR.player.getRole();
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
-        // Carregar fichas atuais
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
         for (const [key, value] of Object.entries(roomData)) {
           if (key.startsWith("ficha-")) fichasAtuais[key] = value;
         }
         this.fichas = fichasAtuais;
-        this.log("📥 Fichas carregadas: " + Object.keys(fichasAtuais).length);
 
-        // Ficha do jogador atual
         const minhaFicha = roomData[`ficha-${playerId}`];
-        if (minhaFicha) {
-          Object.assign(this, minhaFicha);
-          this.log("📄 Ficha recuperada da sala");
-        }
+        if (minhaFicha) Object.assign(this, minhaFicha);
 
-        // Atualizações de fichas
         OBR.room.onMetadataChange((metadata) => {
           const novas = {};
           for (const [key, value] of Object.entries(metadata)) {
@@ -106,13 +98,11 @@ const App = {
         const roomData = await OBR.room.getMetadata();
         const updates = {};
         for (const key of Object.keys(roomData)) {
-          if (key.startsWith("ficha-")) {
-            updates[key] = undefined; // apagar metadado
-          }
+          if (key.startsWith("ficha-")) updates[key] = undefined;
         }
 
         await OBR.room.setMetadata(updates);
-        this.fichas = {}; // limpar localmente também
+        this.fichas = {};
         this.log("🧹 Todas as fichas foram limpas!");
       } catch (e) {
         this.log("❌ Erro ao limpar fichas: " + (e.message || e));
@@ -141,42 +131,46 @@ const App = {
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
-       <div class="stats-row">
-  <div class="stat-box">
-    <span class="label">Vida</span>
-    <div class="stat-controls">
-      <button @click="vida--">−</button>
-      <span class="value">{{ vida }}</span>
-      <button @click="vida++">+</button>
-    </div>
-  </div>
+        <!-- VIDA + MANA -->
+        <div class="stats-row">
+          <div class="stat-box">
+            <span class="label">Vida</span>
+            <div class="stat-controls">
+              <button @click="vida--">−</button>
+              <span class="value">{{ vida }}</span>
+              <button @click="vida++">+</button>
+            </div>
+          </div>
 
-  <div class="stat-box">
-    <span class="label">Mana</span>
-    <div class="stat-controls">
-      <button @click="mana--">−</button>
-      <span class="value">{{ mana }}</span>
-      <button @click="mana++">+</button>
-    </div>
-  </div>
-</div>
-
-        <div class="field">
-          <label>Tipo:</label>
-          <select v-model="tipo">
-            <option>Combatente</option>
-            <option>Conjurador</option>
-          </select>
+          <div class="stat-box">
+            <span class="label">Mana</span>
+            <div class="stat-controls">
+              <button @click="mana--">−</button>
+              <span class="value">{{ mana }}</span>
+              <button @click="mana++">+</button>
+            </div>
+          </div>
         </div>
 
-        <div class="field">
-          <label>Atributo:</label>
-          <select v-model="atributo">
-            <option>Força</option>
-            <option>Destreza</option>
-            <option>Intelecto</option>
-            <option>Vigor</option>
-          </select>
+        <!-- TIPO + ATRIBUTO (lado a lado igual Vida/Mana) -->
+        <div class="stats-row">
+          <div class="stat-box">
+            <span class="label">Tipo</span>
+            <select v-model="tipo" style="margin-top:6px;">
+              <option>Combatente</option>
+              <option>Conjurador</option>
+            </select>
+          </div>
+
+          <div class="stat-box">
+            <span class="label">Atributo</span>
+            <select v-model="atributo" style="margin-top:6px;">
+              <option>Força</option>
+              <option>Destreza</option>
+              <option>Intelecto</option>
+              <option>Vigor</option>
+            </select>
+          </div>
         </div>
 
         <div class="field">
@@ -205,15 +199,15 @@ const App = {
         </div>
       </div>
 
-    <!-- Debug (somente para Mestre) -->
-    <div 
-      v-if="page === 'master' && isMestre"
-      style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
-    >
-      <h3>🪲 Debug:</h3>
-      <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
+      <!-- Debug -->
+      <div 
+        v-if="page === 'master' && isMestre"
+        style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
+      >
+        <h3>🪲 Debug:</h3>
+        <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
+      </div>
     </div>
-
   `,
 };
 
