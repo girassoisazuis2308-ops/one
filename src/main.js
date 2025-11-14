@@ -11,10 +11,12 @@ const App = {
       atributo: "Força",
       inventario: "",
       ultimoResultado: "",
+      ultimasRolagens: [],
       fichas: {},
       salvarTimeout: null,
       logs: [],
       isMestre: false,
+      rolando: false, // 🔥 indica que uma rolagem está em andamento
     };
   },
 
@@ -22,7 +24,6 @@ const App = {
     this.log("⏳ Aguardando OBR...");
     OBR.onReady(async () => {
       this.log("✅ OBR carregado!");
-
       try {
         const playerId = await OBR.player.getId();
         this.log("🎮 Meu ID: " + playerId);
@@ -78,11 +79,10 @@ const App = {
               tipo: this.tipo,
               atributo: this.atributo,
               inventario: this.inventario,
-              ultimoResultado: this.ultimoResultado,   // 🔥 agora vai junto
-              ultimasRolagens: this.ultimasRolagens, // 🔥 novo campo
+              ultimoResultado: this.ultimoResultado,
+              ultimasRolagens: this.ultimasRolagens,
             },
-           });
-
+          });
           this.log("💾 Ficha salva: " + this.nome);
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
@@ -113,33 +113,32 @@ const App = {
       }
     },
 
-rolarD10() {
-  const valor = Math.floor(Math.random() * 10) + 1;
-  // adiciona ao histórico
-  if (!this.ultimasRolagens) this.ultimasRolagens = [];
-  this.ultimasRolagens.unshift("D10 → " + valor);
-  if (this.ultimasRolagens.length > 2) this.ultimasRolagens.pop();
-  
-  this.ultimoResultado = this.ultimasRolagens[0];
-  
-  this.salvarFicha();
-  this.log(this.nome + " 🎲 D10: " + valor);
-},
+    async rolarDado(max, tipo) {
+      if (this.rolando) return;
+      this.rolando = true;
 
-rolarD4() {
-  const valor = Math.floor(Math.random() * 4) + 1;
-  if (!this.ultimasRolagens) this.ultimasRolagens = [];
-  this.ultimasRolagens.unshift("D4 → " + valor);
-  if (this.ultimasRolagens.length > 2) this.ultimasRolagens.pop();
-  
-  this.ultimoResultado = this.ultimasRolagens[0];
+      // toca som de dado caindo
+      const audio = new Audio('https://www.soundjay.com/misc/sounds/dice-roll-1.mp3');
+      audio.play();
 
-  this.salvarFicha();
-  this.log(this.nome + " 🎲 D4: " + valor);
-},
+      // delay de 2 segundos
+      await new Promise(res => setTimeout(res, 2000));
 
+      const valor = Math.floor(Math.random() * max) + 1;
 
+      // atualiza histórico
+      this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
+      if (this.ultimasRolagens.length > 2) this.ultimasRolagens.pop();
+      this.ultimoResultado = this.ultimasRolagens[0];
 
+      this.salvarFicha();
+      this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
+
+      this.rolando = false;
+    },
+
+    rolarD10() { this.rolarDado(10, "D10"); },
+    rolarD4() { this.rolarDado(4, "D4"); },
 
     log(msg) {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
@@ -184,85 +183,57 @@ rolarD4() {
           </div>
         </div>
 
-        <!-- TIPO + ATRIBUTO lado a lado, com o texto ACIMA do select -->
-    <div class="stats-row">
-    <div class="stat-box" style="text-align:center;">
-      <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
-      <select v-model="tipo" style="width:100%;text-align:center;">
-        <option>Combatente</option>
-        <option>Conjurador</option>
-      </select>
-    </div>
-  
-    <div class="stat-box" style="text-align:center;">
-      <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
-      <select v-model="atributo" style="width:100%; text-align:center;">
-        <option>Força</option>
-        <option>Destreza</option>
-        <option>Intelecto</option>
-        <option>Vigor</option>
-      </select>
-    </div>
-  </div>
+        <!-- TIPO + ATRIBUTO -->
+        <div class="stats-row">
+          <div class="stat-box" style="text-align:center;">
+            <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
+            <select v-model="tipo" style="width:100%;text-align:center;">
+              <option>Combatente</option>
+              <option>Conjurador</option>
+            </select>
+          </div>
+        
+          <div class="stat-box" style="text-align:center;">
+            <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
+            <select v-model="atributo" style="width:100%; text-align:center;">
+              <option>Força</option>
+              <option>Destreza</option>
+              <option>Intelecto</option>
+              <option>Vigor</option>
+            </select>
+          </div>
+        </div>
 
         <!-- ROLAGEM DE DADOS -->
-<div class="stats-row">
-  <div class="stat-box" style="padding: 14px;">
-    <button 
-      @click="rolarD10" 
-      style="
-        width:100%;
-        padding:8px;
-        border-radius:8px;
-        border:none;
-        background:linear-gradient(135deg, #7C5CFF, #9B7BFF);
-        color:white;
-        font-weight:700;
-        cursor:pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      "
-      onmousedown="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
-      onmouseup="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
-      onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
-    >
-      Rolar D10
-    </button>
-  </div>
+        <div class="stats-row">
+          <div class="stat-box" style="padding: 14px;">
+            <button 
+              @click="rolarD10" 
+              :disabled="rolando"
+              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
+            >
+              Rolar D10
+            </button>
+          </div>
 
-  <div class="stat-box" style="padding: 14px;">
-    <button 
-      @click="rolarD4" 
-      style="
-        width:100%;
-        padding:8px;
-        border-radius:8px;
-        border:none;
-        background:linear-gradient(135deg, #7C5CFF, #9B7BFF);
-        color:white;
-        font-weight:700;
-        cursor:pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      "
-      onmousedown="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
-      onmouseup="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
-      onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
-    >
-      Rolar D4
-    </button>
-  </div>
-</div>
+          <div class="stat-box" style="padding: 14px;">
+            <button 
+              @click="rolarD4" 
+              :disabled="rolando"
+              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
+            >
+              Rolar D4
+            </button>
+          </div>
+        </div>
 
-
-
-<!-- Resultado -->
-<div class="field" v-if="ultimoResultado !== null">
-  <label>Resultado</label>
-  <div style="font-size:22px; font-weight:bold; margin-top:4px;text-align:center;">
-    {{ ultimoResultado }}
-  </div>
-</div>
+        <!-- Resultado -->
+        <div class="field" v-if="ultimoResultado !== null">
+          <label>Resultado</label>
+          <div style="font-size:22px; font-weight:bold; margin-top:4px;text-align:center;">
+            {{ ultimoResultado }}
+          </div>
+        </div>
 
         <div class="field">
           <label>Inventário</label>
@@ -275,27 +246,13 @@ rolarD4() {
         <h1>PERSONAGENS</h1>
 
         <div style="text-align: center; margin-bottom: 10px;">
-  <button 
-    @click="limparFichas" 
-    style="
-      width: 80px;               /* botão pequeno */
-      padding: 4px 8px;          /* reduz o padding */
-      background: linear-gradient(135deg, #7C5CFF, #9B7BFF); /* gradiente roxo Owlbear */
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-    "
-    onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
-    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
-  >
-    Limpar
-  </button>
-</div>
-
+          <button 
+            @click="limparFichas" 
+            style="width: 80px; padding: 4px 8px; background: linear-gradient(135deg, #7C5CFF, #9B7BFF); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"
+          >
+            Limpar
+          </button>
+        </div>
 
         <div v-if="Object.keys(fichas).length === 0">
           Nenhum jogador conectado ainda.
@@ -309,7 +266,6 @@ rolarD4() {
           <p><strong>Rolagens:</strong> 
             {{ ficha.ultimasRolagens ? ficha.ultimasRolagens.join(' | ') : '—' }}
           </p>
-
         </div>
       </div>
 
