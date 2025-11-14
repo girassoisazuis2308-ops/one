@@ -79,8 +79,9 @@ const App = {
               atributo: this.atributo,
               inventario: this.inventario,
               ultimoResultado: this.ultimoResultado,   // 🔥 agora vai junto
+              ultimasRolagens: this.ultimasRolagens, // 🔥 novo campo
             },
-          });
+           });
 
           this.log("💾 Ficha salva: " + this.nome);
         } catch (e) {
@@ -114,14 +115,25 @@ const App = {
 
 rolarD10() {
   const valor = Math.floor(Math.random() * 10) + 1;
-  this.ultimoResultado = "D10 → " + valor;
+  // adiciona ao histórico
+  if (!this.ultimasRolagens) this.ultimasRolagens = [];
+  this.ultimasRolagens.unshift("D10 → " + valor);
+  if (this.ultimasRolagens.length > 2) this.ultimasRolagens.pop();
+  
+  this.ultimoResultado = this.ultimasRolagens[0];
+  
   this.salvarFicha();
   this.log(this.nome + " 🎲 D10: " + valor);
 },
 
 rolarD4() {
   const valor = Math.floor(Math.random() * 4) + 1;
-  this.ultimoResultado = "D4 → " + valor;
+  if (!this.ultimasRolagens) this.ultimasRolagens = [];
+  this.ultimasRolagens.unshift("D4 → " + valor);
+  if (this.ultimasRolagens.length > 2) this.ultimasRolagens.pop();
+  
+  this.ultimoResultado = this.ultimasRolagens[0];
+
   this.salvarFicha();
   this.log(this.nome + " 🎲 D4: " + valor);
 },
@@ -294,7 +306,10 @@ rolarD4() {
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
-          <p><strong>Rolagem:</strong> {{ ficha.ultimoResultado || '—' }}</p>
+          <p><strong>Rolagens:</strong> 
+            {{ ficha.ultimasRolagens ? ficha.ultimasRolagens.join(' | ') : '—' }}
+          </p>
+
         </div>
       </div>
 
