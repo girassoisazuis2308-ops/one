@@ -12,6 +12,7 @@ const App = {
       inventario: "",
       ultimoResultado: "",
       ultimasRolagens: [],
+      ultimasRolagensVisiveis: false, // controla se o popup está visível
       fichas: {},
       salvarTimeout: null,
       logs: [],
@@ -130,6 +131,10 @@ const App = {
       }
     },
 
+    toggleUltimasRolagens() {
+  this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
+  }
+
     async rolarDado(max, tipo) {
       if (this.rolando) return;
       this.rolando = true;
@@ -245,12 +250,29 @@ const App = {
         </div>
 
         <!-- Resultado -->
-        <div class="field" v-if="ultimoResultado !== null">
-          <label>Resultado</label>
-          <div style="font-size:22px; font-weight:bold; margin-top:4px;text-align:center;">
-            {{ ultimoResultado }}
-          </div>
-        </div>
+       <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; align-items:center; justify-content:center;">
+  <label>Resultado</label>
+  <div style="font-size:22px; font-weight:bold; margin-left:6px;">
+    {{ ultimoResultado }}
+  </div>
+  
+  <!-- botão pequeno ao lado -->
+  <button 
+    @click="toggleUltimasRolagens" 
+    style="margin-left:6px; font-size:12px; padding:2px 4px; border-radius:4px; border:none; cursor:pointer; background:#7C5CFF; color:white;"
+  >
+    📝
+  </button>
+
+  <!-- popup com últimas 3 rolagens -->
+  <div v-if="ultimasRolagensVisiveis" 
+       style="position:absolute; top:30px; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; border-radius:6px; padding:6px 10px; box-shadow:0 2px 6px rgba(0,0,0,0.3); z-index:100;">
+    <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
+      {{ r }}
+    </div>
+  </div>
+</div>
+
 
         <div class="field">
           <label>Inventário</label>
