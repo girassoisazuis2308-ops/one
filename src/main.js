@@ -195,14 +195,12 @@ rolarD4() {
         <!-- ROLAGEM DE DADOS -->
 <div class="stats-row">
   <div class="stat-box" style="padding: 14px;">
-    <label class="label" style="margin-bottom:6px; display:block;">D10</label>
     <button @click="rolarD10" style="width:100%; padding:8px; border-radius:8px; border:none; background:#3B82F6; color:white; font-weight:700;">
       Rolar D10
     </button>
   </div>
 
   <div class="stat-box" style="padding: 14px;">
-    <label class="label" style="margin-bottom:6px; display:block;">D4</label>
     <button @click="rolarD4" style="width:100%; padding:8px; border-radius:8px; border:none; background:#3B82F6; color:white; font-weight:700;">
       Rolar D4
     </button>
