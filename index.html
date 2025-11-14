@@ -12,16 +12,16 @@
   /* ======== TEMA GLOBAL ======== */
   body {
     font-family: "Inter", sans-serif;
-    background: #0A0E1A; /* fundo azul MUITO escuro */
+    background: #0A0E1A;
     margin: 0;
     padding: 0;
-    color: #F8FAFC; /* texto branco suave */
+    color: #F8FAFC;
   }
 
   #app {
     max-width: 900px;
     margin: auto;
-    background: #111827; /* card principal */
+    background: #111827;
     padding: 20px;
     margin-top: 20px;
     border-radius: 16px;
@@ -31,41 +31,38 @@
   /* ======== MENU ======== */
   nav {
     display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 6px;
+    margin-bottom: 12px;
   }
 
   nav button {
-  flex: 1;
-  padding: 6px 8px;   /* antes era 10px */
-  font-size: 13px;    /* diminui a fonte */
-  background: #1E293B;
-  border: none;
-  border-radius: 8px; /* borda mais discreta */
-  font-weight: 600;
-  color: #F1F5F9;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 13px;
+    background: #1E293B;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #F1F5F9;
+    cursor: pointer;
+    transition: 0.2s;
+  }
 
   nav button.active {
-    background: #3B82F6; /* azul vivo */
+    background: #3B82F6;
     color: white;
   }
 
   /* ======== TÍTULO ======== */
   h1 {
-    margin-top: 0;
+    margin-top: 10px;
     font-weight: 800;
     color: #F8FAFC;
-    letter-spacing: -1px;
     text-align: center;
-    margin-bottom: 6px;   /* antes era ~20px, agora está bem menor */
-    margin-top: 10px;     /* deixa mais alinhado com o topo */
+    margin-bottom: 6px;
+    letter-spacing: -1px;
   }
 
-  /* ======== LAYOUT ======== */
   .sheet, .master {
     display: flex;
     flex-direction: column;
@@ -102,51 +99,7 @@
     resize: vertical;
   }
 
-  /* ======== ROW ======== */
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .row button {
-    background: #3B82F6;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .row span {
-    font-size: 20px;
-    font-weight: bold;
-    width: 40px;
-    text-align: center;
-  }
-
-  /* ======== BOX DAS FICHAS ======== */
-  .ficha {
-    background: #1E293B;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 8px;
-    color: #F1F5F9;
-  }
-
-  .ficha h2 {
-    margin: 0 0 5px 0;
-    font-size: 18px;
-    font-weight: 700;
-  }
-
-  .ficha p {
-    margin: 2px 0;
-  }
-
-  /* ======== VIDA / MANA LADO A LADO ======== */
+  /* ======== VIDA / MANA / TIPO / ATRIBUTO ======== */
   .stats-row {
     display: flex;
     gap: 10px;
@@ -192,6 +145,26 @@
     font-size: 20px;
     font-weight: bold;
     color: #F8FAFC;
+  }
+
+  /* ======== BOX DAS FICHAS ======== */
+  .ficha {
+    background: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    color: #F1F5F9;
+  }
+
+  .ficha h2 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .ficha p {
+    margin: 2px 0;
   }
 </style>
 
