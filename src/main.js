@@ -122,7 +122,7 @@ const App = {
       audio.play();
 
       // delay de 2 segundos
-      await new Promise(res => setTimeout(res, 2000));
+      await new Promise(res => setTimeout(res, 1000));
 
       const valor = Math.floor(Math.random() * max) + 1;
 
