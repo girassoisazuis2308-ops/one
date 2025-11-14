@@ -176,7 +176,7 @@ rolarD4() {
     <div class="stats-row">
     <div class="stat-box" style="text-align:center;">
       <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
-      <select v-model="tipo" style="width:100%;">
+      <select v-model="tipo" style="width:100%;text-align:center;">
         <option>Combatente</option>
         <option>Conjurador</option>
       </select>
@@ -184,7 +184,7 @@ rolarD4() {
   
     <div class="stat-box" style="text-align:center;">
       <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
-      <select v-model="atributo" style="width:100%;">
+      <select v-model="atributo" style="width:100%; text-align:center;">
         <option>Força</option>
         <option>Destreza</option>
         <option>Intelecto</option>
@@ -210,7 +210,7 @@ rolarD4() {
         transition: transform 0.2s, box-shadow 0.2s;
         box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       "
-      onmousedown="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
+      onmousedown="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
       onmouseup="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
       onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
     >
@@ -233,7 +233,7 @@ rolarD4() {
         transition: transform 0.2s, box-shadow 0.2s;
         box-shadow: 0 2px 6px rgba(0,0,0,0.4);
       "
-      onmousedown="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
+      onmousedown="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
       onmouseup="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
       onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
     >
@@ -290,7 +290,7 @@ rolarD4() {
         </div>
 
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
-          <h2>{{ ficha.nome || 'Sem nome' }}</h2>
+          <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}</h2>
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
