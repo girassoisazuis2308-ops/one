@@ -250,23 +250,46 @@ const App = {
         </div>
 
         <!-- Resultado -->
-       <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; align-items:center; justify-content:center;">
-  <label>Resultado</label>
-  <div style="font-size:22px; font-weight:bold; margin-left:6px;">
+<div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; align-items:center; justify-content:center;">
+  <label style="margin-right:6px;">Resultado</label>
+  <div style="font-size:22px; font-weight:bold;">
     {{ ultimoResultado }}
   </div>
   
-  <!-- botão pequeno ao lado -->
+  <!-- botão pequeno no canto direito -->
   <button 
     @click="toggleUltimasRolagens" 
-    style="margin-left:6px; font-size:12px; padding:2px 4px; border-radius:4px; border:none; cursor:pointer; background:#7C5CFF; color:white;"
+    style="
+      margin-left:8px; 
+      font-size:12px; 
+      padding:2px 4px; 
+      border-radius:4px; 
+      border:none; 
+      cursor:pointer; 
+      background:#7C5CFF; 
+      color:white;
+      position:relative;
+      z-index:1;
+    "
   >
     ⟳
   </button>
 
   <!-- popup com últimas 3 rolagens -->
   <div v-if="ultimasRolagensVisiveis" 
-       style="position:absolute; top:30px; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; border-radius:6px; padding:6px 10px; box-shadow:0 2px 6px rgba(0,0,0,0.3); z-index:100;">
+       style="
+         position:absolute; 
+         bottom: 30px; /* aparece acima do botão */
+         right: 0; /* alinhado ao botão */
+         background:#222; 
+         color:white;
+         border:1px solid #444; 
+         border-radius:6px; 
+         padding:6px 10px; 
+         box-shadow:0 2px 6px rgba(0,0,0,0.5); 
+         z-index:100;
+         white-space:nowrap;
+       ">
     <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
       {{ r }}
     </div>
