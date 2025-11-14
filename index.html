@@ -12,20 +12,20 @@
   /* ======== TEMA GLOBAL ======== */
   body {
     font-family: "Inter", sans-serif;
-    background: #0F0F1F; /* Cinza bem escuro */
+    background: #0F0F1F;
     margin: 0;
     padding: 0;
-    color: #EDECF7; /* Cinza claro próximo do branco */
+    color: #EDECF7;
   }
 
   #app {
     max-width: 900px;
     margin: auto;
-    background: #1A1B2E; /* Cinza-escuro/roxo */
+    background: linear-gradient(145deg, #1A1B2E, #1C1D33);
     padding: 20px;
     margin-top: 20px;
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
   }
 
   /* ======== MENU ======== */
@@ -39,17 +39,17 @@
     flex: 1;
     padding: 6px 8px;
     font-size: 13px;
-    background: #2C2D3F; /* Cinza médio */
+    background: linear-gradient(135deg, #2C2D3F, #252634);
     border: none;
     border-radius: 8px;
     font-weight: 600;
     color: #EDECF7;
     cursor: pointer;
-    transition: 0.2s;
+    transition: 0.3s;
   }
 
   nav button.active {
-    background: #7C5CFF; /* Roxo Owlbear */
+    background: linear-gradient(135deg, #7C5CFF, #9B7BFF);
     color: white;
   }
 
@@ -73,8 +73,8 @@
   .field {
     display: flex;
     flex-direction: column;
-    background: #2C2D3F; /* Cinza médio */
-    border: 1px solid #3E3F5C; /* Contorno suave */
+    background: linear-gradient(145deg, #2C2D3F, #252634);
+    border: 1px solid #3E3F5C;
     border-radius: 12px;
     padding: 10px;
     margin-top: 2px;
@@ -83,15 +83,15 @@
   .field label {
     font-weight: 600;
     margin-bottom: 3px;
-    color: #CFCFF5; /* Cinza claro */
+    color: #CFCFF5;
   }
 
   input, select, textarea {
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid #4B4C6A; /* Cinza médio */
+    border: 1px solid #4B4C6A;
     font-size: 14px;
-    background: #1A1B2E; /* Fundo cinza escuro/roxo */
+    background: #1A1B2E;
     color: #EDECF7;
   }
 
@@ -108,7 +108,7 @@
 
   .stat-box {
     flex: 1;
-    background: #2C2D3F;
+    background: linear-gradient(145deg, #2C2D3F, #252634);
     border: 1px solid #3E3F5C;
     padding: 10px;
     border-radius: 12px;
@@ -131,7 +131,7 @@
   .stat-controls button {
     width: 28px;
     height: 28px;
-    background: #7C5CFF; /* Roxo */
+    background: linear-gradient(135deg, #7C5CFF, #9B7BFF);
     border: none;
     border-radius: 8px;
     font-size: 16px;
@@ -139,6 +139,11 @@
     color: white;
     cursor: pointer;
     padding: 0;
+    transition: 0.3s;
+  }
+
+  .stat-controls button:hover {
+    transform: scale(1.05);
   }
 
   .stat-controls .value {
@@ -149,7 +154,7 @@
 
   /* ======== BOX DAS FICHAS ======== */
   .ficha {
-    background: #2C2D3F;
+    background: linear-gradient(145deg, #2C2D3F, #252634);
     border: 1px solid #3E3F5C;
     border-radius: 12px;
     padding: 12px;
