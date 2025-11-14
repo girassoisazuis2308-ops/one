@@ -39,16 +39,32 @@ const App = {
         }
         this.fichas = fichasAtuais;
 
+                // Ao carregar a ficha do player
         const minhaFicha = roomData[`ficha-${playerId}`];
-        if (minhaFicha) Object.assign(this, minhaFicha);
-
+        if (minhaFicha) {
+          Object.assign(this, minhaFicha);
+          if (typeof this.ultimasRolagens === 'string') {
+            this.ultimasRolagens = this.ultimasRolagens.split('|');
+          } else if (!Array.isArray(this.ultimasRolagens)) {
+            this.ultimasRolagens = [];
+          }
+        }
+        
+        // Ao atualizar as fichas do Mestre
         OBR.room.onMetadataChange((metadata) => {
           const novas = {};
           for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("ficha-")) novas[key] = value;
+            if (key.startsWith("ficha-")) {
+              // garante que ultimasRolagens seja sempre array
+              if (value.ultimasRolagens && typeof value.ultimasRolagens === 'string') {
+                value.ultimasRolagens = value.ultimasRolagens.split('|');
+              }
+              novas[key] = value;
+            }
           }
           this.fichas = novas;
         });
+
 
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
