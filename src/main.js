@@ -10,7 +10,7 @@ const App = {
       tipo: "Combatente",
       atributo: "Força",
       inventario: "",
-      ultimoResultado: null,
+      ultimoResultado: "",
       fichas: {},
       salvarTimeout: null,
       logs: [],
@@ -78,8 +78,10 @@ const App = {
               tipo: this.tipo,
               atributo: this.atributo,
               inventario: this.inventario,
+              ultimoResultado: this.ultimoResultado,   // 🔥 agora vai junto
             },
           });
+
           this.log("💾 Ficha salva: " + this.nome);
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
@@ -110,17 +112,20 @@ const App = {
       }
     },
 
-    rolarD10() {
+rolarD10() {
   const valor = Math.floor(Math.random() * 10) + 1;
   this.ultimoResultado = "D10 → " + valor;
+  this.salvarFicha();  // 🔥 salva no metadata
   this.log("🎲 Rolou D10: " + valor);
 },
 
 rolarD4() {
   const valor = Math.floor(Math.random() * 4) + 1;
   this.ultimoResultado = "D4 → " + valor;
+  this.salvarFicha();  // 🔥 salva no metadata
   this.log("🎲 Rolou D4: " + valor);
 },
+
 
 
     log(msg) {
@@ -235,6 +240,7 @@ rolarD4() {
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
+          <p><strong>🎲 Última rolagem:</strong> {{ ficha.ultimoResultado || '—' }}</p>
         </div>
       </div>
 
