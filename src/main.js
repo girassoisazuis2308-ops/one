@@ -144,7 +144,7 @@ rolarD4() {
 
       <!-- Aba do Jogador -->
       <div v-if="page==='player'" class="sheet">
-        <h1>Ficha ONE</h1>
+        <h1>ONE</h1>
 
         <div class="field">
           <label>Nome</label>
@@ -224,9 +224,9 @@ rolarD4() {
 
       <!-- Aba do Mestre -->
       <div v-if="page==='master' && isMestre" class="master">
-        <h1>Fichas dos Jogadores</h1>
+        <h1>PERSONAGENS</h1>
 
-        <button @click="limparFichas" style="margin-bottom:10px; background:#a00; color:white; padding:6px 12px; border:none; border-radius:6px;">
+        <button @click="limparFichas" style="weight:50px;margin-bottom:10px; background:#a00; color:white; padding:6px 12px; border:none; border-radius:6px;">
           Limpar
         </button>
 
