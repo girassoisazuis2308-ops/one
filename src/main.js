@@ -115,16 +115,17 @@ const App = {
 rolarD10() {
   const valor = Math.floor(Math.random() * 10) + 1;
   this.ultimoResultado = "D10 → " + valor;
-  this.salvarFicha();  // 🔥 salva no metadata
-  this.log("🎲 Rolou D10: " + valor);
+  this.salvarFicha();
+  this.log(this.nome + " 🎲 D10: " + valor);
 },
 
 rolarD4() {
   const valor = Math.floor(Math.random() * 4) + 1;
   this.ultimoResultado = "D4 → " + valor;
-  this.salvarFicha();  // 🔥 salva no metadata
-  this.log("🎲 Rolou D4: " + valor);
+  this.salvarFicha();
+  this.log(this.nome + " 🎲 D4: " + valor);
 },
+
 
 
 
