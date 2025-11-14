@@ -248,7 +248,7 @@ const App = {
         <div class="field" v-if="ultimoResultado !== null">
           <label>Resultado</label>
           <div style="font-size:22px; font-weight:bold; margin-top:4px;text-align:center;">
-            {{ ultimo resultado }}
+            {{ ultimoResultado }}
           </div>
         </div>
 
