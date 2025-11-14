@@ -133,7 +133,7 @@ const App = {
 
     toggleUltimasRolagens() {
   this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
-  }
+  },
 
     async rolarDado(max, tipo) {
       if (this.rolando) return;
