@@ -194,19 +194,55 @@ rolarD4() {
   </div>
 
         <!-- ROLAGEM DE DADOS -->
+<div cla<!-- ROLAGEM DE DADOS -->
 <div class="stats-row">
   <div class="stat-box" style="padding: 14px;">
-    <button @click="rolarD10" style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700;">
+    <button 
+      @click="rolarD10" 
+      style="
+        width:100%;
+        padding:8px;
+        border-radius:8px;
+        border:none;
+        background:linear-gradient(135deg, #7C5CFF, #9B7BFF);
+        color:white;
+        font-weight:700;
+        cursor:pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      "
+      onmousedown="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
+      onmouseup="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
+      onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
+    >
       Rolar D10
     </button>
   </div>
 
   <div class="stat-box" style="padding: 14px;">
-    <button @click="rolarD4" style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700;">
+    <button 
+      @click="rolarD4" 
+      style="
+        width:100%;
+        padding:8px;
+        border-radius:8px;
+        border:none;
+        background:linear-gradient(135deg, #7C5CFF, #9B7BFF);
+        color:white;
+        font-weight:700;
+        cursor:pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      "
+      onmousedown="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.5)';"
+      onmouseup="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
+      onmouseleave="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(0,0,0,0.4)';"
+    >
       Rolar D4
     </button>
   </div>
 </div>
+
 
 <!-- Resultado -->
 <div class="field" v-if="ultimoResultado !== null">
