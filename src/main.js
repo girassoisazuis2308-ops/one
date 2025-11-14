@@ -80,7 +80,7 @@ const App = {
               atributo: this.atributo,
               inventario: this.inventario,
               ultimoResultado: this.ultimoResultado,
-              ultimasRolagens: this.ultimasRolagens,
+              ultimasRolagens: this.ultimasRolagens.join('|'),
             },
           });
           this.log("💾 Ficha salva: " + this.nome);
@@ -118,7 +118,7 @@ const App = {
       this.rolando = true;
 
       // toca som de dado caindo
-      const audio = new Audio('./roll-of-dice.mp3');
+      const audio = new Audio('/roll-of-dice.mp3');
       audio.play();
 
       // delay de 2 segundos
@@ -264,8 +264,9 @@ const App = {
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
           <p><strong>Rolagens:</strong> 
-            {{ ficha.ultimasRolagens ? ficha.ultimasRolagens.join(' | ') : '—' }}
+            {{ ficha.ultimasRolagens ? ficha.ultimasRolagens.split('|').join(' | ') : '—' }}
           </p>
+
         </div>
       </div>
 
