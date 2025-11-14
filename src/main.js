@@ -261,7 +261,7 @@ const App = {
     @click="toggleUltimasRolagens" 
     style="margin-left:6px; font-size:12px; padding:2px 4px; border-radius:4px; border:none; cursor:pointer; background:#7C5CFF; color:white;"
   >
-    📝
+    ⟳
   </button>
 
   <!-- popup com últimas 3 rolagens -->
