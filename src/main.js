@@ -194,7 +194,6 @@ rolarD4() {
   </div>
 
         <!-- ROLAGEM DE DADOS -->
-<div cla<!-- ROLAGEM DE DADOS -->
 <div class="stats-row">
   <div class="stat-box" style="padding: 14px;">
     <button 
@@ -242,6 +241,7 @@ rolarD4() {
     </button>
   </div>
 </div>
+
 
 
 <!-- Resultado -->
