@@ -389,7 +389,6 @@ limparMonstros() {
     <div style="padding:6px; padding-top:0;">
       <div class="stats-row" style="margin:0;">
         <div class="stat-box">
-          <span class="label">Vida</span>
           <div class="stat-controls">
             <button @click="m.vida--">−</button>
             <span class="value">{{ m.vida }}</span>
