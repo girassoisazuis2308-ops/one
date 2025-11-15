@@ -193,7 +193,6 @@ const App = {
 
       <!-- Player -->
       <div v-if="page==='player'" class="sheet">
-        <h1>ONE</h1>
 
         <div class="field">
           <label>Nome</label>
@@ -316,7 +315,6 @@ const App = {
 
       <!-- Mestre -->
       <div v-if="page==='master' && isMestre" class="master">
-        <h1>PERSONAGENS</h1>
 
         <div style="text-align: center; margin-bottom: 10px;">
           <button
