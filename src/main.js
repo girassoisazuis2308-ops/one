@@ -349,9 +349,8 @@ limparMonstros() {
           </p>
           <p>{{ ficha.inventario }}</p>
         </div>
-      </div>
 
-      <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
+        <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
 <div style="margin-top:20px; padding:10px; background:#1a1a1a; border-radius:8px;">
 
   <h2 style="text-align:center; margin-bottom:10px;">Monstros</h2>
@@ -396,6 +395,7 @@ limparMonstros() {
 
   </div>
 </div>
+      </div>
 
 
       <!-- Debug -->
