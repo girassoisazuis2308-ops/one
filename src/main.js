@@ -379,7 +379,6 @@ limparMonstros() {
   <div
     v-for="(m, index) in monstros"
     :key="index"
-    style="padding:0; background:#111; border:none; border-radius:8px; overflow:hidden;"
   >
 
     <div style="padding:6px; padding-top:0;">
