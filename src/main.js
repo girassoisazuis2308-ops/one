@@ -382,13 +382,10 @@ limparMonstros() {
     style="padding:0; background:#111; border:none; border-radius:8px; overflow:hidden;"
   >
 
-    <h3 style="margin:0; padding:6px; text-align:center;">
-      Monstro {{ index + 1 }}
-    </h3>
-
     <div style="padding:6px; padding-top:0;">
       <div class="stats-row" style="margin:0;">
         <div class="stat-box">
+         <span class="label">Monstro {{ index + 1 }}</span>
           <div class="stat-controls">
             <button @click="m.vida--">−</button>
             <span class="value">{{ m.vida }}</span>
