@@ -333,10 +333,10 @@ const App = {
           <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}</h2>
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
-          <p>{{ ficha.inventario }}</p>
           <p>
             {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}
           </p>
+          <p>{{ ficha.inventario }}</p>
         </div>
       </div>
 
