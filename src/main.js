@@ -374,16 +374,20 @@ limparMonstros() {
     Nenhum monstro criado.
   </div>
 
-  <!-- grade de 2 por linha -->
-  <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
-    <div
-      v-for="(m, index) in monstros"
-      :key="index"
-      style="padding:6px; background:#111; border:none; border-radius:8px;"
-    >
-      <h3 style="margin-bottom:6px; text-align:center;">Monstro {{ index + 1 }}</h3>
+<!-- grade de 2 por linha -->
+<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
+  <div
+    v-for="(m, index) in monstros"
+    :key="index"
+    style="padding:0; background:#111; border:none; border-radius:8px; overflow:hidden;"
+  >
 
-      <div class="stats-row">
+    <h3 style="margin:0; padding:6px; text-align:center;">
+      Monstro {{ index + 1 }}
+    </h3>
+
+    <div style="padding:6px; padding-top:0;">
+      <div class="stats-row" style="margin:0;">
         <div class="stat-box">
           <span class="label">Vida</span>
           <div class="stat-controls">
@@ -393,10 +397,9 @@ limparMonstros() {
           </div>
         </div>
       </div>
-
     </div>
-  </div>
 
+  </div>
 </div>
 
       </div>
