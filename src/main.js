@@ -328,7 +328,7 @@ const App = {
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
           <p>{{ ficha.inventario }}</p>
-          <p><strong>Rolagens:</strong> 
+          <p> 
             {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}
           </p>
 
