@@ -379,9 +379,9 @@ limparMonstros() {
     <div
       v-for="(m, index) in monstros"
       :key="index"
-      style="padding:10px; background:#111; border:1px solid #333; border-radius:8px;"
+      style="padding:6px; background:#111; border:none; border-radius:8px;"
     >
-      <h3 style="margin-bottom:10px; text-align:center;">Monstro {{ index + 1 }}</h3>
+      <h3 style="margin-bottom:6px; text-align:center;">Monstro {{ index + 1 }}</h3>
 
       <div class="stats-row">
         <div class="stat-box">
