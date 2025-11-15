@@ -351,7 +351,7 @@ limparMonstros() {
         </div>
 
         <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
-<div style="margin-top:20px; padding:10px; background:#1a1a1a; border-radius:8px;">
+<div>
 
 
   <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
