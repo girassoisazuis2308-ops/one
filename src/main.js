@@ -18,6 +18,7 @@ const App = {
       logs: [],
       isMestre: false,
       rolando: false,
+      monstros: [],
     };
   },
 
@@ -126,6 +127,16 @@ const App = {
     trocarPagina(p) {
       this.page = p;
     },
+
+    adicionarMonstro() {
+  this.monstros.push({ vida: 10 });
+},
+
+limparMonstros() {
+  if (!confirm("Deseja remover todos os monstros?")) return;
+  this.monstros = [];
+},
+
 
     async limparFichas() {
       if (!this.isMestre) return;
@@ -339,6 +350,53 @@ const App = {
           <p>{{ ficha.inventario }}</p>
         </div>
       </div>
+
+      <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
+<div style="margin-top:20px; padding:10px; background:#1a1a1a; border-radius:8px;">
+
+  <h2 style="text-align:center; margin-bottom:10px;">Monstros</h2>
+
+  <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
+    <button
+      @click="adicionarMonstro"
+      style="padding:6px 12px; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
+    >
+      ➕ Adicionar Monstro
+    </button>
+
+    <button
+      @click="limparMonstros"
+      style="padding:6px 12px; background:#b00000; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
+    >
+      🗑 Limpar
+    </button>
+  </div>
+
+  <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
+    Nenhum monstro criado.
+  </div>
+
+  <div
+    v-for="(m, index) in monstros"
+    :key="index"
+    style="margin-bottom:15px; padding:10px; background:#111; border:1px solid #333; border-radius:8px;"
+  >
+    <h3 style="margin-bottom:10px;">Monstro {{ index + 1 }}</h3>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="label">Vida</span>
+        <div class="stat-controls">
+          <button @click="m.vida--">−</button>
+          <span class="value">{{ m.vida }}</span>
+          <button @click="m.vida++">+</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 
       <!-- Debug -->
       <div 
