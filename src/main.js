@@ -364,8 +364,7 @@ limparMonstros() {
   </div>
 
   <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
-  
-  <p>{{ ficha.inventario }}</p>
+  <p style="font-size:12px;">{{ ficha.inventario }}</p>
   <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
 
 </div>
