@@ -342,29 +342,40 @@ limparMonstros() {
         </div>
 
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
-          <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}
-           <button
-    @click="m.mana--"
-    style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
-  >−</button>
 
-  <span style="min-width:24px; text-align:center; font-weight:bold;">
-    {{m.mana}}
-  </span>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
 
-  <button
-    @click="m.mana++"
-    style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
-  >+</button>
-  </h2>
-          <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
-          <p>{{ ficha.tipo }}</p>
-          <p>
-            {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}
-          </p>
-          <p>{{ ficha.inventario }}</p>
+    <!-- Nome -->
+    <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
 
-        </div>
+    <!-- CONTADOR BONITO IGUAL VIDA -->
+    <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
+      <button
+        @click="ficha._acoes = (ficha._acoes || 0) - 1"
+        style="padding:4px 10px; background:#222; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer;"
+      >−</button>
+
+      <span
+        style="min-width:32px; text-align:center; font-weight:bold; font-size:16px; background:#111; padding:4px 8px; border-radius:6px; display:inline-block;"
+      >
+        {{ ficha._acoes || 0 }}
+      </span>
+
+      <button
+        @click="ficha._acoes = (ficha._acoes || 0) + 1"
+        style="padding:4px 10px; background:#222; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer;"
+      >+</button>
+    </div>
+
+  </div>
+
+  <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
+  
+  <p>{{ ficha.inventario }}</p>
+  <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+
+</div>
+
 
         <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
 <div>
