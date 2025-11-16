@@ -19,7 +19,6 @@ const App = {
       isMestre: false,
       rolando: false,
       monstros: [],
-      acoes: 0,
     };
   },
 
@@ -45,7 +44,6 @@ const App = {
           if (key.startsWith("ficha-")) {
             // Corrige antes de armazenar
             value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-            if (value.acoes === undefined) value.acoes = 0;
 
             fichasAtuais[key] = value;
           }
@@ -88,7 +86,6 @@ const App = {
     tipo: "salvarFicha",
     atributo: "salvarFicha",
     inventario: "salvarFicha",
-    acoes: "salvarFicha",
   },
 
   methods: {
@@ -118,7 +115,6 @@ const App = {
               inventario: this.inventario,
               ultimoResultado: this.ultimoResultado,
               ultimasRolagens: this.ultimasRolagens.join("|"),
-              acoes: this.acoes,
             },
           });
 
@@ -346,7 +342,21 @@ limparMonstros() {
         </div>
 
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
-          <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}</h2>
+          <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}
+           <button
+    @click="ficha.acoes--"
+    style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
+  >−</button>
+
+  <span style="min-width:24px; text-align:center; font-weight:bold;">
+    {{0}}
+  </span>
+
+  <button
+    @click="ficha.acoes++"
+    style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
+  >+</button>
+  </h2>
           <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
           <p>{{ ficha.tipo }}</p>
           <p>
