@@ -344,16 +344,16 @@ limparMonstros() {
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
           <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}
            <button
-    @click="--"
+    @click="m.mana--"
     style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
   >−</button>
 
   <span style="min-width:24px; text-align:center; font-weight:bold;">
-    {{0}}
+    {{m.mana}}
   </span>
 
   <button
-    @click="++"
+    @click="m.mana++"
     style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
   >+</button>
   </h2>
