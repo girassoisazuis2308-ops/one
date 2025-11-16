@@ -350,10 +350,7 @@ limparMonstros() {
 
     <!-- CONTADOR BONITO IGUAL VIDA -->
     <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-      <button
-        @click="ficha._acoes = (ficha._acoes ?? 3) - 1"
-        style="padding:4px 10px; background:#222; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer;"
-      >−</button>
+      <button@click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
 
       <span
         style="min-width:32px; text-align:center; font-weight:bold; font-size:16px; background:#111; padding:4px 8px; border-radius:6px; display:inline-block;"
@@ -361,10 +358,7 @@ limparMonstros() {
         {{ ficha._acoes ?? 3 }}
       </span>
 
-      <button
-        @click="ficha._acoes = (ficha._acoes ?? 3) + 1"
-        style="padding:4px 10px; background:#222; color:white; border:none; border-radius:6px; font-size:16px; cursor:pointer;"
-      >+</button>
+      <button@click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
     </div>
 
   </div>
