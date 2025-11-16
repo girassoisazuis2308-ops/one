@@ -353,7 +353,7 @@ limparMonstros() {
       <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
 
       <span
-        style="min-width:32px; text-align:center; font-weight:bold; font-size:16px; background:#111; padding:4px 8px; border-radius:6px; display:inline-block;"
+        style="display:inline-block;"
       >
         {{ ficha._acoes ?? 3 }}
       </span>
