@@ -344,7 +344,7 @@ limparMonstros() {
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
           <h2 style text-align:center>{{ ficha.nome || 'Sem nome' }}
            <button
-    @click="ficha.acoes--"
+    @click="--"
     style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
   >−</button>
 
@@ -353,7 +353,7 @@ limparMonstros() {
   </span>
 
   <button
-    @click="ficha.acoes++"
+    @click="++"
     style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
   >+</button>
   </h2>
@@ -363,22 +363,6 @@ limparMonstros() {
             {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}
           </p>
           <p>{{ ficha.inventario }}</p>
-          <!-- CONTADOR DE AÇÕES -->
-<div style="display:flex; justify-content:flex-end; gap:6px; margin-top:6px;">
-  <button
-    @click="ficha.acoes--"
-    style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
-  >−</button>
-
-  <span style="min-width:24px; text-align:center; font-weight:bold;">
-    {{ ficha.acoes }}
-  </span>
-
-  <button
-    @click="ficha.acoes++"
-    style="padding:2px 8px; border-radius:4px; background:#333; color:white; border:none; cursor:pointer;"
-  >+</button>
-</div>
 
         </div>
 
