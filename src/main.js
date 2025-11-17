@@ -5,8 +5,8 @@ const App = {
     return {
       page: "player",
       nome: "",
-      vida: 10,
-      mana: 5,
+      vida: 3,
+      mana: 3,
       tipo: "Combatente",
       atributo: "Força",
       inventario: "",
