@@ -233,10 +233,10 @@ limparMonstros() {
 
         <div class="stats-row">
           <div class="stat-box" style="text-align:center;">
-            <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
-            <select v-model="Função" style="width:100%;text-align:center;">
+            <label class="label" style="margin-bottom:6px; display:block;">Função</label>
+            <select v-model="Tipo" style="width:100%;text-align:center;">
               <option>Combatente</option>
-              <option>Conjurador</option>
+              <option>Arruinado</option>
             </select>
           </div>
 
