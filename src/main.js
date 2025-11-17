@@ -222,7 +222,7 @@ limparMonstros() {
           </div>
 
           <div class="stat-box">
-            <span class="label">Mana</span>
+            <span class="label">Ruina</span>
             <div class="stat-controls">
               <button @click="mana--">−</button>
               <span class="value">{{ mana }}</span>
@@ -234,7 +234,7 @@ limparMonstros() {
         <div class="stats-row">
           <div class="stat-box" style="text-align:center;">
             <label class="label" style="margin-bottom:6px; display:block;">Tipo</label>
-            <select v-model="tipo" style="width:100%;text-align:center;">
+            <select v-model="Função" style="width:100%;text-align:center;">
               <option>Combatente</option>
               <option>Conjurador</option>
             </select>
