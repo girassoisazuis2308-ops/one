@@ -36,22 +36,20 @@ const App = {
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
-        // Carregar todas as fichas já existentes
+        // Carregar todas as fichas existentes
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
 
         for (const [key, value] of Object.entries(roomData)) {
           if (key.startsWith("ficha-")) {
-            // Corrige antes de armazenar
             value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-
             fichasAtuais[key] = value;
           }
         }
 
         this.fichas = fichasAtuais;
 
-        // Carregar minha própria ficha
+        // Carregar minha ficha
         const minhaFicha = roomData[`ficha-${playerId}`];
 
         if (minhaFicha) {
@@ -59,7 +57,7 @@ const App = {
           this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
         }
 
-        // Listeners ao vivo para o Mestre
+        // Atualizações ao vivo
         OBR.room.onMetadataChange((metadata) => {
           const novas = {};
 
@@ -89,8 +87,7 @@ const App = {
   },
 
   methods: {
-
-    // 🔥 garante que SEMPRE vira array
+    // 🔥 Normalização do histórico
     normalizarRolagens(v) {
       if (!v) return [];
       if (Array.isArray(v)) return v;
@@ -119,6 +116,7 @@ const App = {
           });
 
           this.log("💾 Ficha salva: " + this.nome);
+
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
         }
@@ -130,18 +128,18 @@ const App = {
     },
 
     adicionarMonstro() {
-  this.monstros.push({ vida: 10 });
-},
+      this.monstros.push({ vida: 10 });
+    },
 
-limparMonstros() {
-  if (!confirm("Deseja remover todos os monstros?")) return;
-  this.monstros = [];
-},
-
+    limparMonstros() {
+      if (!confirm("Deseja remover todos os monstros?")) return;
+      this.monstros = [];
+    },
 
     async limparFichas() {
       if (!this.isMestre) return;
-      if (!confirm("Tem certeza que deseja limpar todas as fichas dos jogadores?")) return;
+      if (!confirm("Tem certeza que deseja limpar todas as fichas dos jogadores?"))
+        return;
 
       try {
         const roomData = await OBR.room.getMetadata();
@@ -153,7 +151,9 @@ limparMonstros() {
 
         await OBR.room.setMetadata(updates);
         this.fichas = {};
+
         this.log("🧹 Todas as fichas foram limpas!");
+
       } catch (e) {
         this.log("❌ Erro ao limpar fichas: " + (e.message || e));
       }
@@ -170,7 +170,7 @@ limparMonstros() {
       // som
       new Audio('/roll-of-dice.mp3').play();
 
-      // efeito
+      // animação
       await new Promise(res => setTimeout(res, 1000));
 
       const valor = Math.floor(Math.random() * max) + 1;
@@ -187,8 +187,13 @@ limparMonstros() {
       this.rolando = false;
     },
 
-    rolarD10() { this.rolarDado(10, "D10"); },
-    rolarD4() { this.rolarDado(4, "D4"); },
+    rolarD10() {
+      this.rolarDado(10, "D10");
+    },
+
+    rolarD4() {
+      this.rolarDado(4, "D4");
+    },
 
     log(msg) {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
@@ -199,19 +204,34 @@ limparMonstros() {
   template: `
     <div>
       <nav>
-        <button :class="{active: page==='player'}" @click="trocarPagina('player')">Jogador</button>
-        <button v-if="isMestre" :class="{active: page==='master'}" @click="trocarPagina('master')">Mestre</button>
+        <button 
+          :class="{active: page==='player'}"
+          @click="trocarPagina('player')"
+        >
+          Jogador
+        </button>
+
+        <button 
+          v-if="isMestre"
+          :class="{active: page==='master'}"
+          @click="trocarPagina('master')"
+        >
+          Mestre
+        </button>
       </nav>
 
-      <!-- Player -->
+      <!-- PLAYER -->
       <div v-if="page==='player'" class="sheet">
 
+        <!-- Nome -->
         <div class="field">
           <label>Nome</label>
           <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
+        <!-- Vida e Ruína -->
         <div class="stats-row">
+
           <div class="stat-box">
             <span class="label">Vida</span>
             <div class="stat-controls">
@@ -229,11 +249,14 @@ limparMonstros() {
               <button @click="ruina++">+</button>
             </div>
           </div>
+
         </div>
 
+        <!-- Função e Atributo -->
         <div class="stats-row">
+
           <div class="stat-box" style="text-align:center;">
-            <label class="label" style="margin-bottom:6px; display:block;">Função</label>
+            <label class="label">Função</label>
             <select v-model="tipo" style="width:100%;text-align:center;">
               <option>Combatente</option>
               <option>Arruinado</option>
@@ -241,98 +264,94 @@ limparMonstros() {
           </div>
 
           <div class="stat-box" style="text-align:center;">
-            <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
-            <select v-model="atributo" style="width:100%; text-align:center;">
+            <label class="label">Atributo</label>
+            <select v-model="atributo" style="width:100%;text-align:center;">
               <option>Força</option>
               <option>Destreza</option>
               <option>Intelecto</option>
               <option>Vigor</option>
             </select>
           </div>
+
         </div>
 
+        <!-- Botões de rolagem -->
         <div class="stats-row">
-          <div class="stat-box" style="padding: 14px;">
+
+          <div class="stat-box" style="padding:14px;">
             <button
               @click="rolarD10"
               :disabled="rolando"
-              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
+              class="dice-button"
             >
               Rolar D10
             </button>
           </div>
 
-          <div class="stat-box" style="padding: 14px;">
+          <div class="stat-box" style="padding:14px;">
             <button
               @click="rolarD4"
               :disabled="rolando"
-              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
+              class="dice-button"
             >
               Rolar D4
             </button>
           </div>
+
         </div>
 
-        <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
-          <div style="display:flex; align-items:center; gap:6px; width:100%; position:relative;">
+        <!-- Resultado -->
+        <div 
+          class="field"
+          v-if="ultimoResultado !== null"
+          style="position:relative;"
+        >
+
+          <div style="display:flex; align-items:center; width:100%;">
+
             <label>Resultado</label>
-            <div style="font-size:22px; font-weight:bold; flex-shrink:0;">
+
+            <div style="font-size:22px; font-weight:bold; margin-left:8px;">
               {{ ultimoResultado }}
             </div>
 
             <button 
-              @click="toggleUltimasRolagens" 
-              style="
-                margin-left:auto;
-                font-size:12px; 
-                padding:2px 4px; 
-                border-radius:4px; 
-                border:none; 
-                cursor:pointer; 
-                background:#7C5CFF; 
-                color:white;
-                position:relative;
-                z-index:1;
-              "
+              @click="toggleUltimasRolagens"
+              class="toggle-history-btn"
             >
               ⟳
             </button>
 
-            <div v-if="ultimasRolagensVisiveis"
-              style="
-                position:absolute; 
-                bottom: 30px;
-                right: 0;
-                background:#222; 
-                color:white;
-                border:1px solid #444; 
-                border-radius:6px; 
-                padding:6px 10px; 
-                box-shadow:0 2px 6px rgba(0,0,0,0.5); 
-                z-index:100;
-                white-space:nowrap;
-              ">
-              <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
+            <!-- Histórico -->
+            <div 
+              v-if="ultimasRolagensVisiveis"
+              class="history-popup"
+            >
+              <div 
+                v-for="(r, i) in ultimasRolagens"
+                :key="i"
+                style="font-size:14px;"
+              >
                 {{ r }}
               </div>
             </div>
+
           </div>
         </div>
 
+        <!-- Inventário -->
         <div class="field">
           <label>Inventário</label>
-          <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
+          <textarea v-model="inventario" rows="5"></textarea>
         </div>
+
       </div>
 
-      <!-- Mestre -->
+      <!-- MESTRE -->
       <div v-if="page==='master' && isMestre" class="master">
 
-        <div style="text-align: center; margin-bottom: 10px;">
-          <button
-            @click="limparFichas"
-            style="width: 80px; padding: 4px 8px; background: linear-gradient(135deg, #7C5CFF, #9B7BFF); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"
-          >
+        <div style="text-align:center; margin-bottom:10px;">
+          <button class="clear-button" @click="limparFichas">
             Limpar
           </button>
         </div>
@@ -341,92 +360,103 @@ limparMonstros() {
           Nenhum jogador conectado ainda.
         </div>
 
-        <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
+        <div 
+          v-for="(ficha, id) in fichas"
+          :key="id"
+          class="ficha"
+        >
 
-  <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
 
-    <!-- Nome -->
-    <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
+            <h2>{{ ficha.nome || "Sem nome" }} | {{ ficha.tipo }}</h2>
 
-    <!-- CONTADOR BONITO IGUAL VIDA -->
-    <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-      <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
+            <div class="stat-controls">
+              <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
+              <span>{{ ficha._acoes ?? 3 }}</span>
+              <button @click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
+            </div>
 
-      <span
-        style="display:inline-block;"
-      >
-        {{ ficha._acoes ?? 3 }}
-      </span>
-
-      <button @click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
-    </div>
-
-  </div>
-
-  <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
-  <p style="font-size:12px;">{{ ficha.inventario }}</p>
-  <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
-
-</div>
-
-
-        <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
-<div>
-
-
-  <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
-    <button
-      @click="adicionarMonstro"
-      style="padding:6px 12px; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-    >
-      Adicionar Monstro
-    </button>
-
-    <button
-      @click="limparMonstros"
-      style="padding:6px 12px; background:#b00000; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-    >
-      Limpar
-    </button>
-  </div>
-
-  <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
-    Nenhum monstro criado.
-  </div>
-
-<!-- grade de 2 por linha -->
-<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
-  <div
-    v-for="(m, index) in monstros"
-    :key="index"
-  >
-
-    <div style="padding:6px; padding-top:0;">
-      <div class="stats-row" style="margin:0;">
-        <div class="stat-box">
-         <span class="label">Monstro {{ index + 1 }}</span>
-          <div class="stat-controls">
-            <button @click="m.vida--">−</button>
-            <span class="value">{{ m.vida }}</span>
-            <button @click="m.vida++">+</button>
           </div>
+
+          <p>
+            Vida: {{ ficha.vida }} | 
+            Ruina: {{ ficha.ruina }} | 
+            {{ ficha.atributo }}
+          </p>
+
+          <p style="font-size:12px;">{{ ficha.inventario }}</p>
+
+          <p>
+            {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(" | ") : "—" }}
+          </p>
+
         </div>
+
+        <!-- Monstros -->
+        <div>
+
+          <div style="display:flex; justify-content:center; gap:10px; margin:15px 0;">
+            <button class="monster-btn" @click="adicionarMonstro">Adicionar Monstro</button>
+            <button class="monster-clear-btn" @click="limparMonstros">Limpar</button>
+          </div>
+
+          <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
+            Nenhum monstro criado.
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px;">
+            <div 
+              v-for="(m, index) in monstros"
+              :key="index"
+            >
+
+              <div style="padding:6px; padding-top:0;">
+                <div class="stats-row" style="margin:0;">
+
+                  <div class="stat-box">
+                    <span class="label">Monstro {{ index + 1 }}</span>
+
+                    <div class="stat-controls">
+                      <button @click="m.vida--">−</button>
+                      <span class="value">{{ m.vida }}</span>
+                      <button @click="m.vida++">+</button>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Debug -->
+        <div 
+          style="
+            margin-top:20px;
+            background:#111;
+            padding:10px;
+            border-radius:8px;
+            max-height:150px;
+            overflow:auto;
+          "
+        >
+          <h3>Debug:</h3>
+
+          <div 
+            v-for="(log, i) in logs"
+            :key="i"
+            style="font-size:12px;"
+          >
+            {{ log }}
+          </div>
+
+        </div>
+
       </div>
-    </div>
 
-  </div>
-</div>
-
-      </div>
-
-
-      <!-- Debug -->
-      <div 
-        v-if="page === 'master' && isMestre"
-        style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;">
-        <h3>Debug:</h3>
-        <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
-      </div>
     </div>
   `,
 };
