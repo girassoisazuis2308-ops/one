@@ -282,8 +282,7 @@ const App = {
             <button
               @click="rolarD10"
               :disabled="rolando"
-              class="dice-button"
-            >
+              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;" >
               Rolar D10
             </button>
           </div>
@@ -292,8 +291,7 @@ const App = {
             <button
               @click="rolarD4"
               :disabled="rolando"
-              class="dice-button"
-            >
+              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;" >
               Rolar D4
             </button>
           </div>
@@ -304,29 +302,27 @@ const App = {
         <div 
           class="field"
           v-if="ultimoResultado !== null"
-          style="position:relative;"
-        >
+          style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
 
-          <div style="display:flex; align-items:center; width:100%;">
+         <div style="display:flex; align-items:center; gap:6px; width:100%; position:relative;">
 
             <label>Resultado</label>
 
-            <div style="font-size:22px; font-weight:bold; margin-left:8px;">
+            <div style="font-size:22px; font-weight:bold; flex-shrink:0;">
               {{ ultimoResultado }}
             </div>
 
             <button 
               @click="toggleUltimasRolagens"
-              class="toggle-history-btn"
-            >
+              style=" margin-left:auto; font-size:12px; padding:2px 4px; border-radius:4px; border:none; cursor:pointer; background:#7C5CFF; color:white; position:relative; z-index:1; " >
               ⟳
             </button>
 
             <!-- Histórico -->
             <div 
               v-if="ultimasRolagensVisiveis"
-              class="history-popup"
-            >
+              style=" position:absolute; bottom: 30px; right: 0; background:#222; color:white; border:1px solid #444; border-radius:6px; padding:6px 10px; box-shadow:0 2px 6px rgba(0,0,0,0.5); z-index:100; white-space:nowrap; ">
+              
               <div 
                 v-for="(r, i) in ultimasRolagens"
                 :key="i"
@@ -351,7 +347,9 @@ const App = {
       <div v-if="page==='master' && isMestre" class="master">
 
         <div style="text-align:center; margin-bottom:10px;">
-          <button class="clear-button" @click="limparFichas">
+          <button  
+          @click="limparFichas"
+          style="width: 80px; padding: 4px 8px; background: linear-gradient(135deg, #7C5CFF, #9B7BFF); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);" >>
             Limpar
           </button>
         </div>
@@ -368,11 +366,11 @@ const App = {
 
           <div style="display:flex; justify-content:space-between; align-items:center;">
 
-            <h2>{{ ficha.nome || "Sem nome" }} | {{ ficha.tipo }}</h2>
+            <h2 style="margin:0;">{{ ficha.nome || "Sem nome" }} | {{ ficha.tipo }}</h2>
 
-            <div class="stat-controls">
+            <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
               <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
-              <span>{{ ficha._acoes ?? 3 }}</span>
+              <span style="display:inline-block;" >{{ ficha._acoes ?? 3 }}</span>
               <button @click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
             </div>
 
@@ -396,8 +394,15 @@ const App = {
         <div>
 
           <div style="display:flex; justify-content:center; gap:10px; margin:15px 0;">
-            <button class="monster-btn" @click="adicionarMonstro">Adicionar Monstro</button>
-            <button class="monster-clear-btn" @click="limparMonstros">Limpar</button>
+            <button 
+            @click="adicionarMonstro"
+            style="padding:6px 12px; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" >
+            Adicionar Monstro</button>
+            
+            <button
+            @click="limparMonstros"
+            style="padding:6px 12px; background:#b00000; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;" >
+            Limpar</button>
           </div>
 
           <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
