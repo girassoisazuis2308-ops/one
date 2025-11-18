@@ -44,7 +44,6 @@ const App = {
           if (key.startsWith("ficha-")) {
             // Corrige antes de armazenar
             value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-
             fichasAtuais[key] = value;
           }
         }
@@ -89,7 +88,6 @@ const App = {
   },
 
   methods: {
-
     // 🔥 garante que SEMPRE vira array
     normalizarRolagens(v) {
       if (!v) return [];
@@ -130,14 +128,13 @@ const App = {
     },
 
     adicionarMonstro() {
-  this.monstros.push({ vida: 10 });
-},
+      this.monstros.push({ vida: 10 });
+    },
 
-limparMonstros() {
-  if (!confirm("Deseja remover todos os monstros?")) return;
-  this.monstros = [];
-},
-
+    limparMonstros() {
+      if (!confirm("Deseja remover todos os monstros?")) return;
+      this.monstros = [];
+    },
 
     async limparFichas() {
       if (!this.isMestre) return;
@@ -187,8 +184,13 @@ limparMonstros() {
       this.rolando = false;
     },
 
-    rolarD10() { this.rolarDado(10, "D10"); },
-    rolarD4() { this.rolarDado(4, "D4"); },
+    rolarD10() {
+      return this.rolarDado(10, "D10");
+    },
+
+    rolarD4() {
+      return this.rolarDado(4, "D4");
+    },
 
     log(msg) {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
@@ -276,20 +278,21 @@ limparMonstros() {
         <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
           <div style="display:flex; align-items:center; gap:6px; width:100%; position:relative;">
             <label>Resultado</label>
+
             <div style="font-size:22px; font-weight:bold; flex-shrink:0;">
               {{ ultimoResultado }}
             </div>
 
-            <button 
-              @click="toggleUltimasRolagens" 
+            <button
+              @click="toggleUltimasRolagens"
               style="
                 margin-left:auto;
-                font-size:12px; 
-                padding:2px 4px; 
-                border-radius:4px; 
-                border:none; 
-                cursor:pointer; 
-                background:#7C5CFF; 
+                font-size:12px;
+                padding:2px 4px;
+                border-radius:4px;
+                border:none;
+                cursor:pointer;
+                background:#7C5CFF;
                 color:white;
                 position:relative;
                 z-index:1;
@@ -300,18 +303,19 @@ limparMonstros() {
 
             <div v-if="ultimasRolagensVisiveis"
               style="
-                position:absolute; 
+                position:absolute;
                 bottom: 30px;
                 right: 0;
-                background:#222; 
+                background:#222;
                 color:white;
-                border:1px solid #444; 
-                border-radius:6px; 
-                padding:6px 10px; 
-                box-shadow:0 2px 6px rgba(0,0,0,0.5); 
+                border:1px solid #444;
+                border-radius:6px;
+                padding:6px 10px;
+                box-shadow:0 2px 6px rgba(0,0,0,0.5);
                 z-index:100;
                 white-space:nowrap;
-              ">
+              "
+            >
               <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
                 {{ r }}
               </div>
@@ -342,94 +346,82 @@ limparMonstros() {
         </div>
 
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
 
-  <div style="display:flex; justify-content:space-between; align-items:center;">
+            <!-- Nome -->
+            <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
 
-    <!-- Nome -->
-    <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
+            <!-- CONTADOR BONITO IGUAL VIDA -->
+            <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
+              <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
 
-    <!-- CONTADOR BONITO IGUAL VIDA -->
-    <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-      <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
+              <span style="display:inline-block;">
+                {{ ficha._acoes ?? 3 }}
+              </span>
 
-      <span
-        style="display:inline-block;"
-      >
-        {{ ficha._acoes ?? 3 }}
-      </span>
+              <button @click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
+            </div>
 
-      <button @click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
-    </div>
+          </div>
 
-  </div>
-
-  <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
-  <p style="font-size:12px;">{{ ficha.inventario }}</p>
-  <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
-
-</div>
-
+          <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
+          <p style="font-size:12px;">{{ ficha.inventario }}</p>
+          <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+        </div>
 
         <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
-<div>
+        <div>
+          <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
+            <button
+              @click="adicionarMonstro"
+              style="padding:6px 12px; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
+            >
+              Adicionar Monstro
+            </button>
 
-
-  <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
-    <button
-      @click="adicionarMonstro"
-      style="padding:6px 12px; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-    >
-      Adicionar Monstro
-    </button>
-
-    <button
-      @click="limparMonstros"
-      style="padding:6px 12px; background:#b00000; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-    >
-      Limpar
-    </button>
-  </div>
-
-  <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
-    Nenhum monstro criado.
-  </div>
-
-<!-- grade de 2 por linha -->
-<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
-  <div
-    v-for="(m, index) in monstros"
-    :key="index"
-  >
-
-    <div style="padding:6px; padding-top:0;">
-      <div class="stats-row" style="margin:0;">
-        <div class="stat-box">
-         <span class="label">Monstro {{ index + 1 }}</span>
-          <div class="stat-controls">
-            <button @click="m.vida--">−</button>
-            <span class="value">{{ m.vida }}</span>
-            <button @click="m.vida++">+</button>
+            <button
+              @click="limparMonstros"
+              style="padding:6px 12px; background:#b00000; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
+            >
+              Limpar
+            </button>
           </div>
+
+          <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
+            Nenhum monstro criado.
+          </div>
+
+          <!-- grade de 2 por linha -->
+          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
+            <div v-for="(m, index) in monstros" :key="index">
+              <div style="padding:6px; padding-top:0;">
+                <div class="stats-row" style="margin:0;">
+                  <div class="stat-box">
+                    <span class="label">Monstro {{ index + 1 }}</span>
+                    <div class="stat-controls">
+                      <button @click="m.vida--">−</button>
+                      <span class="value">{{ m.vida }}</span>
+                      <button @click="m.vida++">+</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
-      </div>
-    </div>
 
-  </div>
-</div>
-
-      </div>
-
-
-      <!-- Debug -->
-      <div 
-        v-if="page === 'master' && isMestre"
-        style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;">
-        <h3>Debug:</h3>
-        <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
+        <!-- Debug -->
+        <div
+          v-if="page === 'master' && isMestre"
+          style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
+        >
+          <h3>Debug:</h3>
+          <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
+        </div>
       </div>
     </div>
   `,
 };
 
 Vue.createApp(App).mount("#app");
-
