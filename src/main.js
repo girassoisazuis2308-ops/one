@@ -6,7 +6,7 @@ const App = {
       page: "player",
       nome: "",
       vida: 3,
-      mana: 3,
+      ruina: 3,
       tipo: "Combatente",
       atributo: "Força",
       inventario: "",
@@ -82,7 +82,7 @@ const App = {
   watch: {
     nome: "salvarFicha",
     vida: "salvarFicha",
-    mana: "salvarFicha",
+    ruina: "salvarFicha",
     tipo: "salvarFicha",
     atributo: "salvarFicha",
     inventario: "salvarFicha",
@@ -109,7 +109,7 @@ const App = {
             [`ficha-${playerId}`]: {
               nome: this.nome,
               vida: this.vida,
-              mana: this.mana,
+              ruina: this.ruina,
               tipo: this.tipo,
               atributo: this.atributo,
               inventario: this.inventario,
@@ -224,9 +224,9 @@ limparMonstros() {
           <div class="stat-box">
             <span class="label">Ruina</span>
             <div class="stat-controls">
-              <button @click="mana--">−</button>
-              <span class="value">{{ mana }}</span>
-              <button @click="mana++">+</button>
+              <button @click="ruina--">−</button>
+              <span class="value">{{ ruina }}</span>
+              <button @click="ruina++">+</button>
             </div>
           </div>
         </div>
@@ -363,7 +363,7 @@ limparMonstros() {
 
   </div>
 
-  <p>Vida: {{ ficha.vida }} | Mana: {{ ficha.mana }} | {{ ficha.atributo }}</p>
+  <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
   <p style="font-size:12px;">{{ ficha.inventario }}</p>
   <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
 
