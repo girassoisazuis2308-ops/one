@@ -68,8 +68,8 @@ const App = {
           this.monstros = valores.map(v => ({ vida: v }));
         }
 
-        // Listeners ao vivo para o Mestre
-       OBR.room.onMetadataChange((metadata) => {
+              // Listeners ao vivo para o Mestre
+      OBR.room.onMetadataChange((metadata) => {
         const novas = {};
       
         for (const [key, value] of Object.entries(metadata)) {
@@ -79,51 +79,35 @@ const App = {
           }
         }
       
-        // Mescla sem sobrescrever _acoes quando a entrada não traz esse campo
+        // Mescla sem sobrescrever campos importantes
         for (const [key, ficha] of Object.entries(novas)) {
           if (!this.fichas[key]) {
-            // se não tinha localmente, usa a ficha (garantir _acoes padrão)
             this.fichas[key] = {
               ...ficha,
               _acoes: ficha._acoes ?? 3
             };
           } else {
-            // já existe localmente -> mesclar campo a campo
             const existente = this.fichas[key];
-      
-            // copie todos os campos vindos, mas preserve _acoes se não vier
             Object.assign(existente, {
               nome: ficha.nome ?? existente.nome,
               vida: ficha.vida ?? existente.vida,
               ruina: ficha.ruina ?? existente.ruina,
               tipo: ficha.tipo ?? existente.tipo,
               atributo: ficha.atributo ?? existente.atributo,
-              inventario: (ficha.inventario !== undefined) ? ficha.inventario : existente.inventario,
-              ultimoResultado: (ficha.ultimoResultado !== undefined) ? ficha.ultimoResultado : existente.ultimoResultado,
+              inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
+              ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
               ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
-              _acoes: (ficha._acoes !== undefined) ? ficha._acoes : (existente._acoes ?? 3)
+              _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
             });
-    }
-  }
-
-  // monstros apenas atualizam eles mesmos
-  if (metadata.monstros) {
-    const valores = metadata.monstros.split("|").map(v => Number(v));
-    this.monstros = valores.map(v => ({ vida: v }));
-  }
-});
-
-          
-            }
           }
-
-        
-          // 🔥 Monstros atualizam apenas eles mesmos
-          if (metadata.monstros) {
-            const valores = metadata.monstros.split("|").map(v => Number(v));
-            this.monstros = valores.map(v => ({ vida: v }));
-          }
-        });
+        }
+      
+        // Atualiza monstros
+        if (metadata.monstros) {
+          const valores = metadata.monstros.split("|").map(v => Number(v));
+          this.monstros = valores.map(v => ({ vida: v }));
+        }
+      });
                 } catch (e) {
           this.log("❌ Erro na inicialização: " + (e.message || e));
         }
