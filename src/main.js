@@ -254,21 +254,43 @@ const App = {
       if (this.logs.length > 20) this.logs.pop();
     },
 
-    async atualizarRolagens() {
-      try {
-        const roomData = await OBR.room.getMetadata();
-        for (const [key, value] of Object.entries(roomData)) {
-          if (!key.startsWith("ficha-")) continue;
-          const ficha = this.fichas[key];
-          if (ficha) {
-            ficha.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-          }
-        }
-        this.log("🔄 Rolagens atualizadas manualmente!");
-      } catch (e) {
-        this.log("❌ Erro ao atualizar rolagens: " + e.message);
+   async atualizarRolagens() {
+  try {
+    const roomData = await OBR.room.getMetadata();
+    const playerId = await OBR.player.getId();
+    const minhaFichaId = `ficha-${playerId}`;
+    
+    let atualizou = false;
+    
+    for (const [key, value] of Object.entries(roomData)) {
+      if (!key.startsWith("ficha-")) continue;
+      
+      // Atualiza fichas de outros jogadores
+      if (this.fichas[key]) {
+        const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
+        this.fichas[key].ultimasRolagens = rolagensNormalizadas;
+        atualizou = true;
       }
-    },
+      
+      // Atualiza a ficha do jogador atual
+      if (key === minhaFichaId && value.ultimasRolagens) {
+        this.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+        if (this.ultimasRolagens.length > 0) {
+          this.ultimoResultado = this.ultimasRolagens[0];
+        }
+        atualizou = true;
+      }
+    }
+    
+    if (atualizou) {
+      this.log("🔄 Rolagens atualizadas manualmente!");
+    } else {
+      this.log("ℹ️ Nenhuma rolagem nova encontrada.");
+    }
+  } catch (e) {
+    this.log("❌ Erro ao atualizar rolagens: " + e.message);
+  }
+},
 
     async alterarAcoes(id, novoValor) {
       const fichaAtual = this.fichas[id];
