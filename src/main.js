@@ -70,50 +70,51 @@ const App = {
         }
 
         // 🔥 CORREÇÃO: Listener simplificado e seguro
-        OBR.room.onMetadataChange((metadata) => {
-          if (this.atualizandoFicha) return; // 🔥 Evita loop infinito
-          
-          const minhaFichaId = `ficha-${playerId}`;
-          
-          // Atualiza monstros
-          if (metadata.monstros !== undefined) {
-            const valores = metadata.monstros.split("|").map(v => Number(v));
-            this.monstros = valores.map(v => ({ vida: v }));
-          }
+        // 🔥 CORREÇÃO: Listener focado apenas em rolagens
+OBR.room.onMetadataChange((metadata) => {
+  if (this.atualizandoFicha) return;
+  
+  const minhaFichaId = `ficha-${playerId}`;
+  
+  // Atualiza monstros
+  if (metadata.monstros !== undefined) {
+    const valores = metadata.monstros.split("|").map(v => Number(v));
+    this.monstros = valores.map(v => ({ vida: v }));
+  }
 
-          // Atualiza apenas as fichas que NÃO são a do jogador atual
-          // Isso evita o conflito quando o próprio jogador salva
-          for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("ficha-") && key !== minhaFichaId) {
-              const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
-              
-              if (!this.fichas[key]) {
-                this.fichas[key] = { 
-                  ...value, 
-                  ultimasRolagens: rolagensNormalizadas,
-                  _acoes: value._acoes ?? 3
-                };
-              } else {
-                // 🔥 ATUALIZAÇÃO SEGURA: Só atualiza se realmente mudou
-                if (JSON.stringify(this.fichas[key].ultimasRolagens) !== JSON.stringify(rolagensNormalizadas)) {
-                  this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-                }
-                if (this.fichas[key].ultimoResultado !== value.ultimoResultado) {
-                  this.fichas[key].ultimoResultado = value.ultimoResultado;
-                }
-                this.fichas[key].vida = value.vida;
-                this.fichas[key].ruina = value.ruina;
-                this.fichas[key].nome = value.nome;
-                this.fichas[key].tipo = value.tipo;
-                this.fichas[key].atributo = value.atributo;
-                this.fichas[key].inventario = value.inventario;
-                if (value._acoes !== undefined) {
-                  this.fichas[key]._acoes = value._acoes;
-                }
-              }
-            }
-          }
-        });
+  // 🔥 ATUALIZA APENAS ROLAGENS de outras fichas
+  for (const [key, value] of Object.entries(metadata)) {
+    if (key.startsWith("ficha-") && key !== minhaFichaId) {
+      const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
+      
+      if (!this.fichas[key]) {
+        // Se é uma ficha nova, cria com todos os dados
+        this.fichas[key] = { 
+          ...value, 
+          ultimasRolagens: rolagensNormalizadas,
+          _acoes: value._acoes ?? 3
+        };
+      } else {
+        // 🔥 ATUALIZA APENAS ROLAGENS, mantém outros campos
+        const rolagensMudaram = JSON.stringify(this.fichas[key].ultimasRolagens) !== JSON.stringify(rolagensNormalizadas);
+        
+        if (rolagensMudaram) {
+          this.fichas[key].ultimasRolagens = rolagensNormalizadas;
+          this.fichas[key].ultimoResultado = value.ultimoResultado;
+        }
+        
+        // Atualiza outros campos apenas se necessário (sem sobrescrever mudanças locais)
+        if (value.vida !== undefined) this.fichas[key].vida = value.vida;
+        if (value.ruina !== undefined) this.fichas[key].ruina = value.ruina;
+        if (value.nome !== undefined) this.fichas[key].nome = value.nome;
+        if (value.tipo !== undefined) this.fichas[key].tipo = value.tipo;
+        if (value.atributo !== undefined) this.fichas[key].atributo = value.atributo;
+        if (value.inventario !== undefined) this.fichas[key].inventario = value.inventario;
+        if (value._acoes !== undefined) this.fichas[key]._acoes = value._acoes;
+      }
+    }
+  }
+});
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
       }
@@ -267,40 +268,70 @@ const App = {
     },
 
     async atualizarRolagens() {
-      try {
-        this.log("🔄 Forçando atualização de rolagens...");
+  try {
+    this.log("🔄 Atualizando apenas rolagens das fichas...");
+    
+    const roomData = await OBR.room.getMetadata();
+    const playerId = await OBR.player.getId();
+    let atualizouAlgo = false;
+    
+    for (const [key, value] of Object.entries(roomData)) {
+      if (key.startsWith("ficha-")) {
+        const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
         
-        const roomData = await OBR.room.getMetadata();
-        const playerId = await OBR.player.getId();
-        
-        for (const [key, value] of Object.entries(roomData)) {
-          if (key.startsWith("ficha-")) {
-            const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
-            
-            if (key === `ficha-${playerId}`) {
-              this.ultimasRolagens = rolagensNormalizadas;
-              if (rolagensNormalizadas.length > 0) {
-                this.ultimoResultado = rolagensNormalizadas[0];
-              }
-            }
-            
-            if (this.fichas[key]) {
-              this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-              this.fichas[key].ultimoResultado = value.ultimoResultado;
-            } else {
-              this.fichas[key] = {
-                ...value,
-                ultimasRolagens: rolagensNormalizadas
-              };
-            }
+        // 🔥 ATUALIZA APENAS ROLAGENS, mantém todos os outros campos
+        if (this.fichas[key]) {
+          // Só atualiza se as rolagens forem diferentes
+          const rolagensAtuais = JSON.stringify(this.fichas[key].ultimasRolagens);
+          const rolagensNovas = JSON.stringify(rolagensNormalizadas);
+          
+          if (rolagensAtuais !== rolagensNovas) {
+            this.fichas[key].ultimasRolagens = rolagensNormalizadas;
+            this.fichas[key].ultimoResultado = value.ultimoResultado || '';
+            atualizouAlgo = true;
           }
+        } else {
+          // Se é uma ficha nova, cria com todos os dados
+          this.fichas[key] = {
+            nome: value.nome || '',
+            vida: value.vida ?? 3,
+            ruina: value.ruina ?? 3,
+            tipo: value.tipo || 'Combatente',
+            atributo: value.atributo || 'Força',
+            inventario: value.inventario || '',
+            ultimoResultado: value.ultimoResultado || '',
+            ultimasRolagens: rolagensNormalizadas,
+            _acoes: value._acoes ?? 3
+          };
+          atualizouAlgo = true;
         }
         
-        this.log("✅ Rolagens atualizadas com sucesso!");
-      } catch (e) {
-        this.log("❌ Erro ao atualizar rolagens: " + e.message);
+        // 🔥 Atualiza também a ficha do jogador atual (apenas rolagens)
+        if (key === `ficha-${playerId}`) {
+          const minhasRolagensAtuais = JSON.stringify(this.ultimasRolagens);
+          const minhasRolagensNovas = JSON.stringify(rolagensNormalizadas);
+          
+          if (minhasRolagensAtuais !== minhasRolagensNovas) {
+            this.ultimasRolagens = rolagensNormalizadas;
+            if (rolagensNormalizadas.length > 0) {
+              this.ultimoResultado = rolagensNormalizadas[0];
+            }
+            atualizouAlgo = true;
+          }
+        }
       }
-    },
+    }
+    
+    if (atualizouAlgo) {
+      this.log("✅ Rolagens atualizadas com sucesso! (outros campos preservados)");
+    } else {
+      this.log("ℹ️ Nenhuma rolagem nova encontrada.");
+    }
+    
+  } catch (e) {
+    this.log("❌ Erro ao atualizar rolagens: " + e.message);
+  }
+},
 
     async alterarAcoes(id, novoValor) {
       const fichaAtual = this.fichas[id];
