@@ -20,7 +20,10 @@ const App = {
       rolando: false,
       monstros: [],
       _acoes: 3,
-      // 🔥 NOVO: Controle para evitar conflitos
+      // 🔥 NOVO: Sistema de fila
+      filaSalvamento: [],
+      processandoFila: false,
+      ultimoSalvamento: 0,
       atualizandoFicha: false
     };
   },
@@ -69,52 +72,50 @@ const App = {
           this.monstros = valores.map(v => ({ vida: v }));
         }
 
-        // 🔥 CORREÇÃO: Listener simplificado e seguro
-        // 🔥 CORREÇÃO: Listener focado apenas em rolagens
-OBR.room.onMetadataChange((metadata) => {
-  if (this.atualizandoFicha) return;
-  
-  const minhaFichaId = `ficha-${playerId}`;
-  
-  // Atualiza monstros
-  if (metadata.monstros !== undefined) {
-    const valores = metadata.monstros.split("|").map(v => Number(v));
-    this.monstros = valores.map(v => ({ vida: v }));
-  }
+        // Listeners ao vivo para o Mestre
+        OBR.room.onMetadataChange((metadata) => {
+          if (this.atualizandoFicha) return;
+          
+          const minhaFichaId = `ficha-${playerId}`;
+          
+          // Atualiza monstros
+          if (metadata.monstros !== undefined) {
+            const valores = metadata.monstros.split("|").map(v => Number(v));
+            this.monstros = valores.map(v => ({ vida: v }));
+          }
 
-  // 🔥 ATUALIZA APENAS ROLAGENS de outras fichas
-  for (const [key, value] of Object.entries(metadata)) {
-    if (key.startsWith("ficha-") && key !== minhaFichaId) {
-      const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
-      
-      if (!this.fichas[key]) {
-        // Se é uma ficha nova, cria com todos os dados
-        this.fichas[key] = { 
-          ...value, 
-          ultimasRolagens: rolagensNormalizadas,
-          _acoes: value._acoes ?? 3
-        };
-      } else {
-        // 🔥 ATUALIZA APENAS ROLAGENS, mantém outros campos
-        const rolagensMudaram = JSON.stringify(this.fichas[key].ultimasRolagens) !== JSON.stringify(rolagensNormalizadas);
-        
-        if (rolagensMudaram) {
-          this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-          this.fichas[key].ultimoResultado = value.ultimoResultado;
-        }
-        
-        // Atualiza outros campos apenas se necessário (sem sobrescrever mudanças locais)
-        if (value.vida !== undefined) this.fichas[key].vida = value.vida;
-        if (value.ruina !== undefined) this.fichas[key].ruina = value.ruina;
-        if (value.nome !== undefined) this.fichas[key].nome = value.nome;
-        if (value.tipo !== undefined) this.fichas[key].tipo = value.tipo;
-        if (value.atributo !== undefined) this.fichas[key].atributo = value.atributo;
-        if (value.inventario !== undefined) this.fichas[key].inventario = value.inventario;
-        if (value._acoes !== undefined) this.fichas[key]._acoes = value._acoes;
-      }
-    }
-  }
-});
+          // Atualiza apenas as fichas que NÃO são a do jogador atual
+          for (const [key, value] of Object.entries(metadata)) {
+            if (key.startsWith("ficha-") && key !== minhaFichaId) {
+              const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
+              
+              if (!this.fichas[key]) {
+                this.fichas[key] = { 
+                  ...value, 
+                  ultimasRolagens: rolagensNormalizadas,
+                  _acoes: value._acoes ?? 3
+                };
+              } else {
+                // 🔥 ATUALIZAÇÃO SEGURA: Só atualiza se realmente mudou
+                if (JSON.stringify(this.fichas[key].ultimasRolagens) !== JSON.stringify(rolagensNormalizadas)) {
+                  this.fichas[key].ultimasRolagens = rolagensNormalizadas;
+                }
+                if (this.fichas[key].ultimoResultado !== value.ultimoResultado) {
+                  this.fichas[key].ultimoResultado = value.ultimoResultado;
+                }
+                this.fichas[key].vida = value.vida;
+                this.fichas[key].ruina = value.ruina;
+                this.fichas[key].nome = value.nome;
+                this.fichas[key].tipo = value.tipo;
+                this.fichas[key].atributo = value.atributo;
+                this.fichas[key].inventario = value.inventario;
+                if (value._acoes !== undefined) {
+                  this.fichas[key]._acoes = value._acoes;
+                }
+              }
+            }
+          }
+        });
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
       }
@@ -144,13 +145,59 @@ OBR.room.onMetadataChange((metadata) => {
       return [];
     },
 
+    // 🔥 SISTEMA DE FILA PARA SALVAMENTO
+    async adicionarNaFila(payload, playerId) {
+      this.filaSalvamento.push({ payload, playerId, timestamp: Date.now() });
+      this.log(`📦 Adicionado na fila: ${payload.nome} (${this.filaSalvamento.length} na fila)`);
+      
+      if (!this.processandoFila) {
+        this.processarFila();
+      }
+    },
+
+    async processarFila() {
+      if (this.processandoFila || this.filaSalvamento.length === 0) return;
+      
+      this.processandoFila = true;
+      
+      while (this.filaSalvamento.length > 0) {
+        const item = this.filaSalvamento[0];
+        const agora = Date.now();
+        
+        // 🔥 ESPERA pelo menos 500ms entre salvamentos
+        if (agora - this.ultimoSalvamento < 500) {
+          await new Promise(resolve => setTimeout(resolve, 500 - (agora - this.ultimoSalvamento)));
+        }
+        
+        try {
+          await OBR.room.setMetadata({
+            [`ficha-${item.playerId}`]: item.payload
+          });
+          
+          this.ultimoSalvamento = Date.now();
+          this.filaSalvamento.shift();
+          
+          this.log(`✅ Salvado da fila: ${item.payload.nome} (${this.filaSalvamento.length} restantes)`);
+          
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (e) {
+          this.log(`❌ Erro ao salvar ${item.payload.nome} da fila: ${e.message}`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      this.processandoFila = false;
+      this.log("🎯 Fila de salvamento concluída");
+    },
+
     async salvarFicha() {
       clearTimeout(this.salvarTimeout);
 
       this.salvarTimeout = setTimeout(async () => {
         try {
           const playerId = await OBR.player.getId();
-          this.atualizandoFicha = true; // 🔥 BLOQUEIA ATUALIZAÇÕES
+          this.atualizandoFicha = true;
           
           const payload = {
             nome: this.nome,
@@ -167,19 +214,15 @@ OBR.room.onMetadataChange((metadata) => {
             payload._acoes = this._acoes;
           }
 
-          await OBR.room.setMetadata({
-            [`ficha-${playerId}`]: payload
-          });
-
-          this.log("💾 Ficha salva: " + this.nome);
+          // 🔥 USA FILA EM VEZ DE SALVAR DIRETAMENTE
+          this.adicionarNaFila(payload, playerId);
           
-          // 🔥 LIBERA APÓS UM PEQUENO DELAY
           setTimeout(() => {
             this.atualizandoFicha = false;
           }, 500);
           
         } catch (e) {
-          this.log("❌ Erro ao salvar: " + e.message);
+          this.log("❌ Erro ao preparar salvamento: " + e.message);
           this.atualizandoFicha = false;
         }
       }, 800);
@@ -242,12 +285,14 @@ OBR.room.onMetadataChange((metadata) => {
       await new Promise(res => setTimeout(res, 1000));
 
       const valor = Math.floor(Math.random() * max) + 1;
+      const novaRolagem = `${tipo} → ${valor}`;
 
-      this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
+      this.ultimasRolagens.unshift(novaRolagem);
       if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
 
-      this.ultimoResultado = this.ultimasRolagens[0];
+      this.ultimoResultado = novaRolagem;
 
+      // 🔥 SALVA USANDO A FILA
       this.salvarFicha();
       this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
 
@@ -268,52 +313,50 @@ OBR.room.onMetadataChange((metadata) => {
     },
 
     async atualizarRolagens() {
-  try {
-    this.log("🔓 GM: Destravando fichas com modificação simulada...");
-    
-    const roomData = await OBR.room.getMetadata();
-    const playerId = await OBR.player.getId();
-    let fichasDestravadas = 0;
-
-    for (const [key, value] of Object.entries(roomData)) {
-      // 🔥 SÓ FICHAS DE OUTROS JOGADORES
-      if (key.startsWith("ficha-") && key !== `ficha-${playerId}`) {
-        const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
-        const fichaAtual = this.fichas[key];
+      try {
+        this.log("🔍 Verificando rolagens pendentes...");
         
-        if (fichaAtual && rolagensNormalizadas.length > 0) {
-          // 🔥 ADICIONA UM TIMESTAMP INVISÍVEL para forçar mudança
-          const timestamp = Date.now();
-          const modificacao = ` updated:${timestamp}`;
-          
-          await OBR.room.setMetadata({
-            [key]: {
-              ...value,
-              inventario: (value.inventario || '') + modificacao,
-              ultimasRolagens: value.ultimasRolagens,
-              ultimoResultado: value.ultimoResultado
+        const roomData = await OBR.room.getMetadata();
+        const playerId = await OBR.player.getId();
+        let atualizacoesNecessarias = 0;
+
+        for (const [key, value] of Object.entries(roomData)) {
+          if (key.startsWith("ficha-") && key !== `ficha-${playerId}`) {
+            const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
+            const fichaAtual = this.fichas[key];
+            
+            if (fichaAtual) {
+              const rolagensAtuais = fichaAtual.ultimasRolagens.join('|');
+              const rolagensNovas = rolagensNormalizadas.join('|');
+              
+              if (rolagensAtuais !== rolagensNovas) {
+                // 🔥 ADICIONA NA FILA PARA ATUALIZAR
+                const payload = {
+                  ...value,
+                  ultimasRolagens: value.ultimasRolagens,
+                  ultimoResultado: value.ultimoResultado
+                };
+                
+                const outroPlayerId = key.replace('ficha-', '');
+                this.adicionarNaFila(payload, outroPlayerId);
+                atualizacoesNecessarias++;
+                
+                this.log(`📦 ${fichaAtual.nome}: Adicionado na fila para sincronizar`);
+              }
             }
-          });
-          
-          // Atualiza localmente
-          fichaAtual.ultimasRolagens = rolagensNormalizadas;
-          fichaAtual.ultimoResultado = value.ultimoResultado;
-          fichaAtual.inventario = (value.inventario || '') + modificacao;
-          
-          fichasDestravadas++;
-          this.log(`✅ ${fichaAtual.nome}: Destravada com timestamp ${timestamp}`);
-          
-          await new Promise(resolve => setTimeout(resolve, 200));
+          }
         }
+
+        if (atualizacoesNecessarias > 0) {
+          this.log(`🔄 ${atualizacoesNecessarias} fichas na fila para sincronização`);
+        } else {
+          this.log("💡 Todas as fichas já estão sincronizadas");
+        }
+
+      } catch (e) {
+        this.log("❌ Erro ao verificar rolagens: " + e.message);
       }
-    }
-
-    this.log(`🎉 GM destravou ${fichasDestravadas} fichas com modificação simulada!`);
-
-  } catch (e) {
-    this.log("❌ Erro: " + e.message);
-  }
-},
+    },
 
     async alterarAcoes(id, novoValor) {
       const fichaAtual = this.fichas[id];
@@ -332,11 +375,10 @@ OBR.room.onMetadataChange((metadata) => {
       };
 
       try {
-        await OBR.room.setMetadata({
-          [id]: fichaParaSalvar
-        });
-
-        this.fichas[id]._acoes = novoValor;
+        // 🔥 USA FILA PARA ALTERAÇÕES DO GM TAMBÉM
+        const playerId = id.replace('ficha-', '');
+        this.adicionarNaFila(fichaParaSalvar, playerId);
+        
         this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
       } catch (e) {
         this.log("❌ Erro ao alterar ações: " + e.message);
@@ -487,9 +529,10 @@ OBR.room.onMetadataChange((metadata) => {
           </button>
           <button
             @click="atualizarRolagens"
+            :disabled="processandoFila"
             style="padding:6px 12px; background:#28a745; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-left: 10px;"
           >
-            🔄 Atualizar Tudo
+            🔄 {{ processandoFila ? `Processando... (${filaSalvamento.length})` : 'Sincronizar' }}
           </button>
         </div>
 
