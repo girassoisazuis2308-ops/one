@@ -68,29 +68,32 @@ const App = {
         }
 
         // Listeners ao vivo para o Mestre
-        OBR.room.onMetadataChange((metadata) => {
+       OBR.room.onMetadataChange((metadata) => {
           const novas = {};
-
+        
           for (const [key, value] of Object.entries(metadata)) {
             if (key.startsWith("ficha-")) {
               value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
               novas[key] = value;
             }
           }
-
-          this.fichas = novas;
-
-          // 🔥 Atualização ao vivo dos monstros
+        
+          // 🔥 Não substituir o objeto inteiro!
+          for (const [key, ficha] of Object.entries(novas)) {
+            if (!this.fichas[key]) {
+              this.fichas[key] = ficha;
+            } else {
+              Object.assign(this.fichas[key], ficha);
+            }
+          }
+        
+          // 🔥 Monstros atualizam apenas eles mesmos
           if (metadata.monstros) {
             const valores = metadata.monstros.split("|").map(v => Number(v));
             this.monstros = valores.map(v => ({ vida: v }));
           }
         });
 
-      } catch (e) {
-        this.log("❌ Erro na inicialização: " + (e.message || e));
-      }
-    });
   },
 
   watch: {
