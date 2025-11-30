@@ -98,9 +98,14 @@ const App = {
               ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
               ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
               _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
+              
+
             });
           }
         }
+
+        // 🔥 FORÇA o Vue a re-renderizar ao receber múltiplas rolagens simultâneas
+            this.fichas = { ...this.fichas };
       
         // Atualiza monstros
         if (metadata.monstros) {
