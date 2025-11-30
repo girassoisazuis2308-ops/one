@@ -24,83 +24,84 @@ const App = {
   },
 
   mounted() {
-    this.log("⏳ Aguardando OBR...");
+  this.log("⏳ Aguardando OBR...");
 
-    OBR.onReady(async () => {
-      this.log("✅ OBR carregado!");
+  OBR.onReady(async () => {
+    this.log("✅ OBR carregado!");
 
-      try {
-        const playerId = await OBR.player.getId();
-        this.log("🎮 Meu ID: " + playerId);
+    try {
+      const playerId = await OBR.player.getId();
+      this.log("🎮 Meu ID: " + playerId);
 
-        const role = await OBR.player.getRole();
-        this.isMestre = role === "GM";
-        this.log("🎩 Papel detectado: " + role);
+      const role = await OBR.player.getRole();
+      this.isMestre = role === "GM";
+      this.log("🎩 Papel detectado: " + role);
 
-        // Carregar todas as fichas já salvas
-        const roomData = await OBR.room.getMetadata();
-        const fichasAtuais = {};
+      // Carregar todas as fichas já salvas
+      const roomData = await OBR.room.getMetadata();
+      const fichasAtuais = {};
 
-        for (const [key, value] of Object.entries(roomData)) {
-          if (key.startsWith("ficha-")) {
-            value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-            fichasAtuais[key] = value;
-          }
+      for (const [key, value] of Object.entries(roomData)) {
+        if (key.startsWith("ficha-")) {
+          value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+          fichasAtuais[key] = value;
         }
-
-        this.fichas = fichasAtuais;
-
-        // Carregar minha própria ficha
-        const minhaFicha = roomData[`ficha-${playerId}`];
-
-        if (minhaFicha) {
-          Object.assign(this, minhaFicha);
-          this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
-          if (this._acoes === undefined) this._acoes = minhaFicha._acoes ?? 3;
-        } else {
-          this._acoes = 3;
-        }
-
-        // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
-        if (roomData.monstros) {
-          const valores = roomData.monstros.split("|").map(v => Number(v));
-          this.monstros = valores.map(v => ({ vida: v }));
-        }
-
-        // Listener ao vivo para o Mestre
-        OBR.room.onMetadataChange((metadata) => {
-  try {
-    this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
-
-    const novoMapa = {};
-
-    // Reconstrói TODAS as fichas do zero SEMPRE que qualquer metadata muda
-    for (const [key, value] of Object.entries(metadata)) {
-      if (!key.startsWith("ficha-")) continue;
-
-      // Normaliza
-      const ficha = { ...value };
-      ficha.ultimasRolagens = this.normalizarRolagens(ficha.ultimasRolagens);
-      ficha._acoes = ficha._acoes ?? 3;
-
-      novoMapa[key] = ficha;
-    }
-
-    // --- ATUALIZAÇÃO ATÔMICA ---
-    this.fichas = novoMapa;
-    // ----------------------------
-
-    // Monstros
-    if (metadata.monstros) {
-      const valores = metadata.monstros.split("|").map(v => Number(v));
-      this.monstros = valores.map(v => ({ vida: v }));
-    }
-
-  } catch (err) {
-    this.log("❌ Erro no onMetadataChange: " + (err.message || err));
-  }
-});
       }
+
+      this.fichas = fichasAtuais;
+
+      // Carregar minha própria ficha
+      const minhaFicha = roomData[`ficha-${playerId}`];
+      if (minhaFicha) {
+        Object.assign(this, minhaFicha);
+        this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
+        if (this._acoes === undefined) this._acoes = minhaFicha._acoes ?? 3;
+      } else {
+        this._acoes = 3;
+      }
+
+      // Carregar monstros salvos
+      if (roomData.monstros) {
+        const valores = roomData.monstros.split("|").map(v => Number(v));
+        this.monstros = valores.map(v => ({ vida: v }));
+      }
+
+      // Listener ao vivo para o Mestre
+      OBR.room.onMetadataChange((metadata) => {
+        try {
+          this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
+
+          const novoMapa = {};
+          // Reconstrói todas as fichas
+          for (const [key, value] of Object.entries(metadata)) {
+            if (!key.startsWith("ficha-")) continue;
+
+            const ficha = { ...value };
+            ficha.ultimasRolagens = this.normalizarRolagens(ficha.ultimasRolagens);
+            ficha._acoes = ficha._acoes ?? 3;
+
+            novoMapa[key] = ficha;
+          }
+
+          // Atualização atômica
+          this.fichas = novoMapa;
+
+          // Atualiza monstros
+          if (metadata.monstros) {
+            const valores = metadata.monstros.split("|").map(v => Number(v));
+            this.monstros = valores.map(v => ({ vida: v }));
+          }
+
+        } catch (err) {
+          this.log("❌ Erro no onMetadataChange: " + (err.message || err));
+        }
+      });
+
+    } catch (err) {
+      this.log("❌ Erro ao inicializar OBR: " + (err.message || err));
+    }
+  });
+}
   },
 
   watch: {
