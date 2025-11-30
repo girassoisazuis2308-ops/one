@@ -18,8 +18,10 @@ const App = {
       logs: [],
       isMestre: false,
       rolando: false,
-      monstros: [], // 🔥 MONSTROS (MELHORIA)
+      monstros: [],
       _acoes: 3,
+      // 🔥 NOVO: Controle para evitar conflitos
+      atualizandoFicha: false
     };
   },
 
@@ -67,23 +69,24 @@ const App = {
           this.monstros = valores.map(v => ({ vida: v }));
         }
 
-        // Listeners ao vivo para o Mestre - VERSÃO CORRIGIDA
+        // 🔥 CORREÇÃO: Listener simplificado e seguro
         OBR.room.onMetadataChange((metadata) => {
-          // Atualiza monstros primeiro
+          if (this.atualizandoFicha) return; // 🔥 Evita loop infinito
+          
+          const minhaFichaId = `ficha-${playerId}`;
+          
+          // Atualiza monstros
           if (metadata.monstros !== undefined) {
             const valores = metadata.monstros.split("|").map(v => Number(v));
             this.monstros = valores.map(v => ({ vida: v }));
           }
 
-          // Atualiza fichas - abordagem mais simples e robusta
+          // Atualiza apenas as fichas que NÃO são a do jogador atual
+          // Isso evita o conflito quando o próprio jogador salva
           for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("ficha-")) {
-              const isMinhaFicha = key === `ficha-${playerId}`;
-              
-              // Normaliza rolagens
+            if (key.startsWith("ficha-") && key !== minhaFichaId) {
               const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
               
-              // Atualiza a ficha local
               if (!this.fichas[key]) {
                 this.fichas[key] = { 
                   ...value, 
@@ -91,9 +94,13 @@ const App = {
                   _acoes: value._acoes ?? 3
                 };
               } else {
-                // Atualiza apenas os campos que importam para evitar conflitos
-                this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-                this.fichas[key].ultimoResultado = value.ultimoResultado;
+                // 🔥 ATUALIZAÇÃO SEGURA: Só atualiza se realmente mudou
+                if (JSON.stringify(this.fichas[key].ultimasRolagens) !== JSON.stringify(rolagensNormalizadas)) {
+                  this.fichas[key].ultimasRolagens = rolagensNormalizadas;
+                }
+                if (this.fichas[key].ultimoResultado !== value.ultimoResultado) {
+                  this.fichas[key].ultimoResultado = value.ultimoResultado;
+                }
                 this.fichas[key].vida = value.vida;
                 this.fichas[key].ruina = value.ruina;
                 this.fichas[key].nome = value.nome;
@@ -102,23 +109,6 @@ const App = {
                 this.fichas[key].inventario = value.inventario;
                 if (value._acoes !== undefined) {
                   this.fichas[key]._acoes = value._acoes;
-                }
-              }
-              
-              // Se for a ficha do jogador atual, atualiza também a interface
-              if (isMinhaFicha) {
-                this.ultimasRolagens = rolagensNormalizadas;
-                if (rolagensNormalizadas.length > 0) {
-                  this.ultimoResultado = rolagensNormalizadas[0];
-                }
-                this.vida = value.vida;
-                this.ruina = value.ruina;
-                this.nome = value.nome;
-                this.tipo = value.tipo;
-                this.atributo = value.atributo;
-                this.inventario = value.inventario;
-                if (value._acoes !== undefined) {
-                  this._acoes = value._acoes;
                 }
               }
             }
@@ -133,11 +123,11 @@ const App = {
   watch: {
     nome: "salvarFicha",
     vida(value) {
-      if (value < 0) this.vida = 0; // 🔥 MELHORIA 1
+      if (value < 0) this.vida = 0;
       this.salvarFicha();
     },
     ruina(value) {
-      if (value < 0) this.ruina = 0; // 🔥 MELHORIA 1
+      if (value < 0) this.ruina = 0;
       this.salvarFicha();
     },
     tipo: "salvarFicha",
@@ -159,9 +149,7 @@ const App = {
       this.salvarTimeout = setTimeout(async () => {
         try {
           const playerId = await OBR.player.getId();
-          
-          // Pega o estado atual do metadata para evitar sobrescrever outros dados
-          const currentMetadata = await OBR.room.getMetadata();
+          this.atualizandoFicha = true; // 🔥 BLOQUEIA ATUALIZAÇÕES
           
           const payload = {
             nome: this.nome,
@@ -178,24 +166,28 @@ const App = {
             payload._acoes = this._acoes;
           }
 
-          // Atualiza apenas a ficha específica, mantendo o resto
           await OBR.room.setMetadata({
-            ...currentMetadata,
             [`ficha-${playerId}`]: payload
           });
 
           this.log("💾 Ficha salva: " + this.nome);
+          
+          // 🔥 LIBERA APÓS UM PEQUENO DELAY
+          setTimeout(() => {
+            this.atualizandoFicha = false;
+          }, 500);
+          
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
+          this.atualizandoFicha = false;
         }
-      }, 1000); // Aumentei para 1s para reduzir conflitos
+      }, 800);
     },
 
     trocarPagina(p) {
       this.page = p;
     },
 
-    // 🔥 MELHORIA 2: SALVAR MONSTROS
     async salvarMonstros() {
       try {
         await OBR.room.setMetadata({
@@ -278,16 +270,13 @@ const App = {
       try {
         this.log("🔄 Forçando atualização de rolagens...");
         
-        // Recarrega TUDO do metadata
         const roomData = await OBR.room.getMetadata();
         const playerId = await OBR.player.getId();
         
-        // Atualiza todas as fichas
         for (const [key, value] of Object.entries(roomData)) {
           if (key.startsWith("ficha-")) {
             const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
             
-            // Se for a ficha do jogador atual
             if (key === `ficha-${playerId}`) {
               this.ultimasRolagens = rolagensNormalizadas;
               if (rolagensNormalizadas.length > 0) {
@@ -295,7 +284,6 @@ const App = {
               }
             }
             
-            // Atualiza na lista de fichas (para mestre)
             if (this.fichas[key]) {
               this.fichas[key].ultimasRolagens = rolagensNormalizadas;
               this.fichas[key].ultimoResultado = value.ultimoResultado;
@@ -318,7 +306,6 @@ const App = {
       const fichaAtual = this.fichas[id];
       if (!fichaAtual) return;
 
-      // 🔥 Cria um clone completo da ficha ANTES do envio
       const fichaParaSalvar = {
         nome: fichaAtual.nome,
         vida: fichaAtual.vida,
@@ -336,9 +323,7 @@ const App = {
           [id]: fichaParaSalvar
         });
 
-        // Atualiza localmente sem sobrescrever a ficha inteira
         this.fichas[id]._acoes = novoValor;
-
         this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
       } catch (e) {
         this.log("❌ Erro ao alterar ações: " + e.message);
