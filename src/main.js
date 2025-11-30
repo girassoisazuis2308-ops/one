@@ -269,29 +269,31 @@ OBR.room.onMetadataChange((metadata) => {
 
     async atualizarRolagens() {
   try {
-    this.log("🔄 Atualizando apenas rolagens das fichas...");
+    this.log("🔄 FORÇANDO atualização de rolagens...");
     
     const roomData = await OBR.room.getMetadata();
     const playerId = await OBR.player.getId();
     let atualizouAlgo = false;
     
+    this.log(`📁 Metadata keys: ${Object.keys(roomData).filter(k => k.startsWith('ficha-')).join(', ')}`);
+    
     for (const [key, value] of Object.entries(roomData)) {
       if (key.startsWith("ficha-")) {
         const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
         
-        // 🔥 ATUALIZA APENAS ROLAGENS, mantém todos os outros campos
+        this.log(`🔍 Processando ${key}: ${rolagensNormalizadas.length} rolagens -> ${rolagensNormalizadas.join(' | ')}`);
+        
+        // 🔥 FORÇA ATUALIZAÇÃO SEM COMPARAR
         if (this.fichas[key]) {
-          // Só atualiza se as rolagens forem diferentes
-          const rolagensAtuais = JSON.stringify(this.fichas[key].ultimasRolagens);
-          const rolagensNovas = JSON.stringify(rolagensNormalizadas);
+          const rolagensAntigas = this.fichas[key].ultimasRolagens.join(' | ');
+          const rolagensNovas = rolagensNormalizadas.join(' | ');
           
-          if (rolagensAtuais !== rolagensNovas) {
-            this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-            this.fichas[key].ultimoResultado = value.ultimoResultado || '';
-            atualizouAlgo = true;
-          }
+          this.fichas[key].ultimasRolagens = rolagensNormalizadas;
+          this.fichas[key].ultimoResultado = value.ultimoResultado || '';
+          atualizouAlgo = true;
+          
+          this.log(`📊 ${this.fichas[key].nome}: ${rolagensAntigas} → ${rolagensNovas}`);
         } else {
-          // Se é uma ficha nova, cria com todos os dados
           this.fichas[key] = {
             nome: value.nome || '',
             vida: value.vida ?? 3,
@@ -304,28 +306,24 @@ OBR.room.onMetadataChange((metadata) => {
             _acoes: value._acoes ?? 3
           };
           atualizouAlgo = true;
+          this.log(`🆕 Nova ficha: ${value.nome || 'Sem nome'}`);
         }
         
-        // 🔥 Atualiza também a ficha do jogador atual (apenas rolagens)
+        // Atualiza ficha do jogador atual
         if (key === `ficha-${playerId}`) {
-          const minhasRolagensAtuais = JSON.stringify(this.ultimasRolagens);
-          const minhasRolagensNovas = JSON.stringify(rolagensNormalizadas);
-          
-          if (minhasRolagensAtuais !== minhasRolagensNovas) {
-            this.ultimasRolagens = rolagensNormalizadas;
-            if (rolagensNormalizadas.length > 0) {
-              this.ultimoResultado = rolagensNormalizadas[0];
-            }
-            atualizouAlgo = true;
+          this.ultimasRolagens = rolagensNormalizadas;
+          if (rolagensNormalizadas.length > 0) {
+            this.ultimoResultado = rolagensNormalizadas[0];
           }
+          atualizouAlgo = true;
         }
       }
     }
     
     if (atualizouAlgo) {
-      this.log("✅ Rolagens atualizadas com sucesso! (outros campos preservados)");
+      this.log("✅ Todas as rolagens foram forçadamente atualizadas!");
     } else {
-      this.log("ℹ️ Nenhuma rolagem nova encontrada.");
+      this.log("❌ Nenhuma ficha encontrada para atualizar.");
     }
     
   } catch (e) {
