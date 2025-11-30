@@ -100,7 +100,7 @@ const App = {
     this.log("❌ Erro no onMetadataChange: " + (err.message || err));
   }
 });
-
+      }
   },
 
   watch: {
