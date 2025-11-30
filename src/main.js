@@ -19,6 +19,7 @@ const App = {
       isMestre: false,
       rolando: false,
       monstros: [], // 🔥 MONSTROS (MELHORIA)
+      _acoes: 3,
     };
   },
 
@@ -93,6 +94,11 @@ const App = {
             this.monstros = valores.map(v => ({ vida: v }));
           }
         });
+                } catch (e) {
+          this.log("❌ Erro na inicialização: " + (e.message || e));
+        }
+      });
+
 
   },
 
