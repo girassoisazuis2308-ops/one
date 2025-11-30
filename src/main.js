@@ -37,7 +37,7 @@ const App = {
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
-        // Carregar todas as fichas já s
+        // Carregar todas as fichas já salvas
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
 
@@ -61,65 +61,66 @@ const App = {
           this._acoes = 3;
         }
 
-
         // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
         if (roomData.monstros) {
           const valores = roomData.monstros.split("|").map(v => Number(v));
           this.monstros = valores.map(v => ({ vida: v }));
         }
 
-       // Substitua o bloco OBR.room.onMetadataChange(...) pelo código abaixo
-          OBR.room.onMetadataChange((metadata) => {
-            try {
-              this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
-          
-              for (const [key, value] of Object.entries(metadata)) {
-                if (!key.startsWith("ficha-")) continue;
-          
-                // clone do incoming (p/ não mexer no original)
-                const incoming = { ...value };
-          
-                // normaliza ultimasRolagens no clone (sempre ficará array)
-                incoming.ultimasRolagens = this.normalizarRolagens(incoming.ultimasRolagens);
-          
-                const existente = this.fichas[key] ?? {};
-          
-                // Faz merge seguro: só sobrescreve se incoming tiver o campo definido
-                const merged = { ...existente }; // começa com o existente
-          
-                for (const prop of Object.keys(incoming)) {
-                  // evita sobrescrever com undefined
-                  if (incoming[prop] !== undefined) {
-                    merged[prop] = incoming[prop];
-                  }
+        // Listener ao vivo para o Mestre
+        OBR.room.onMetadataChange((metadata) => {
+          try {
+            this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
+
+            for (const [key, value] of Object.entries(metadata)) {
+              if (!key.startsWith("ficha-")) continue;
+
+              // clone do incoming (p/ não mexer no original)
+              const incoming = { ...value };
+
+              // normaliza ultimasRolagens no clone (sempre ficará array)
+              incoming.ultimasRolagens = this.normalizarRolagens(incoming.ultimasRolagens);
+
+              const existente = this.fichas[key] ?? {};
+
+              // Faz merge seguro: só sobrescreve se incoming tiver o campo definido
+              const merged = { ...existente }; // começa com o existente
+
+              for (const prop of Object.keys(incoming)) {
+                // evita sobrescrever com undefined
+                if (incoming[prop] !== undefined) {
+                  merged[prop] = incoming[prop];
                 }
-          
-                // garantir que ultimasRolagens seja sempre um array novo (para reatividade)
-                merged.ultimasRolagens = Array.isArray(incoming.ultimasRolagens)
-                  ? [...incoming.ultimasRolagens]
-                  : Array.isArray(existente.ultimasRolagens)
-                    ? [...existente.ultimasRolagens]
-                    : [];
-          
-                // garantir _acoes preservado quando não vier
-                merged._acoes = (incoming._acoes !== undefined) ? incoming._acoes : (existente._acoes ?? 3);
-          
-                // substitui a ficha inteira no mapa (força reatividade)
-                this.fichas = { ...this.fichas, [key]: merged };
               }
-          
-              // Monstros (mantém igual)
-              if (metadata.monstros) {
-                const valores = metadata.monstros.split("|").map(v => Number(v));
-                this.monstros = valores.map(v => ({ vida: v }));
-              }
-            } catch (err) {
-              this.log("❌ Erro no onMetadataChange: " + (err.message || err));
+
+              // garantir que ultimasRolagens seja sempre um array novo (para reatividade)
+              merged.ultimasRolagens = Array.isArray(incoming.ultimasRolagens)
+                ? [...incoming.ultimasRolagens]
+                : Array.isArray(existente.ultimasRolagens)
+                  ? [...existente.ultimasRolagens]
+                  : [];
+
+              // garantir _acoes preservado quando não vier
+              merged._acoes = (incoming._acoes !== undefined) ? incoming._acoes : (existente._acoes ?? 3);
+
+              // substitui a ficha inteira no mapa (força reatividade)
+              this.fichas = { ...this.fichas, [key]: merged };
             }
-          });
 
+            // Monstros (mantém igual)
+            if (metadata.monstros) {
+              const valores = metadata.monstros.split("|").map(v => Number(v));
+              this.monstros = valores.map(v => ({ vida: v }));
+            }
+          } catch (err) {
+            this.log("❌ Erro no onMetadataChange: " + (err.message || err));
+          }
+        });
 
-
+      } catch (e) {
+        this.log("❌ Erro na inicialização: " + (e.message || e));
+      }
+    });
   },
 
   watch: {
@@ -146,44 +147,42 @@ const App = {
     },
 
     async salvarFicha() {
-  clearTimeout(this.salvarTimeout);
+      clearTimeout(this.salvarTimeout);
 
-  this.salvarTimeout = setTimeout(async () => {
-    try {
-      const playerId = await OBR.player.getId();
+      this.salvarTimeout = setTimeout(async () => {
+        try {
+          const playerId = await OBR.player.getId();
 
-      // Monta o objeto sem _acoes quando não for Mestre
-      const payload = {
-        nome: this.nome,
-        vida: this.vida,
-        ruina: this.ruina,
-        tipo: this.tipo,
-        atributo: this.atributo,
-        inventario: this.inventario,
-        ultimoResultado: this.ultimoResultado,
-        ultimasRolagens: this.ultimasRolagens.join("|"),
-      };
+          // Monta o objeto sem _acoes quando não for Mestre
+          const payload = {
+            nome: this.nome,
+            vida: this.vida,
+            ruina: this.ruina,
+            tipo: this.tipo,
+            atributo: this.atributo,
+            inventario: this.inventario,
+            ultimoResultado: this.ultimoResultado,
+            ultimasRolagens: this.ultimasRolagens.join("|"),
+          };
 
-      // Apenas o Mestre envia/atualiza _acoes
-      if (this.isMestre) {
-        payload._acoes = this._acoes;
-      }
+          // Apenas o Mestre envia/atualiza _acoes
+          if (this.isMestre) {
+            payload._acoes = this._acoes;
+          }
 
-      // 🔥 ADICIONE AQUI:
-      this.log(`→ salvarFicha payload: ficha-${playerId} = ${JSON.stringify(payload)}`);
+          // 🔥 LOG DO PAYLOAD (colocado aqui conforme pedido)
+          this.log(`→ salvarFicha payload: ficha-${playerId} = ${JSON.stringify(payload)}`);
 
+          await OBR.room.setMetadata({
+            [`ficha-${playerId}`]: payload
+          });
 
-      await OBR.room.setMetadata({
-        [`ficha-${playerId}`]: payload
-      });
-
-      this.log("💾 Ficha salva: " + this.nome);
-    } catch (e) {
-      this.log("❌ Erro ao salvar: " + e.message);
-    }
-  }, 700);
-},
-
+          this.log("💾 Ficha salva: " + this.nome);
+        } catch (e) {
+          this.log("❌ Erro ao salvar: " + e.message);
+        }
+      }, 700);
+    },
 
     trocarPagina(p) {
       this.page = p;
@@ -269,39 +268,38 @@ const App = {
     },
 
     async alterarAcoes(id, novoValor) {
-  const fichaAtual = this.fichas[id];
-  if (!fichaAtual) return;
+      const fichaAtual = this.fichas[id];
+      if (!fichaAtual) return;
 
-  // 🔥 Cria um clone completo da ficha ANTES do envio
-  const fichaParaSalvar = {
-    nome: fichaAtual.nome,
-    vida: fichaAtual.vida,
-    ruina: fichaAtual.ruina,
-    tipo: fichaAtual.tipo,
-    atributo: fichaAtual.atributo,
-    inventario: fichaAtual.inventario,
-    ultimoResultado: fichaAtual.ultimoResultado,
-    ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
-    _acoes: novoValor,
-  };
+      // 🔥 Cria um clone completo da ficha ANTES do envio
+      const fichaParaSalvar = {
+        nome: fichaAtual.nome,
+        vida: fichaAtual.vida,
+        ruina: fichaAtual.ruina,
+        tipo: fichaAtual.tipo,
+        atributo: fichaAtual.atributo,
+        inventario: fichaAtual.inventario,
+        ultimoResultado: fichaAtual.ultimoResultado,
+        ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
+        _acoes: novoValor,
+      };
 
-  try {
-    await OBR.room.setMetadata({
-      [id]: fichaParaSalvar
-    });
+      try {
+        await OBR.room.setMetadata({
+          [id]: fichaParaSalvar
+        });
 
-    // Atualiza localmente sem sobrescrever a ficha inteira
-    this.fichas[id]._acoes = novoValor;
+        // Atualiza localmente sem sobrescrever a ficha inteira
+        this.fichas[id]._acoes = novoValor;
 
-    this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
-  } catch (e) {
-    this.log("❌ Erro ao alterar ações: " + e.message);
-  }
-}
-
+        this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
+      } catch (e) {
+        this.log("❌ Erro ao alterar ações: " + e.message);
+      }
+    }
 
   },
-  
+
   template: `
     <div>
       <nav>
