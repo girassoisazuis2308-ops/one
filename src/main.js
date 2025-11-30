@@ -450,6 +450,12 @@ const App = {
           >
             Limpar
           </button>
+          <button
+    @click="atualizarRolagens"
+    style="padding:6px 12px; background:#ffa500; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
+  >
+    Atualizar Rolagens
+  </button>
         </div>
 
         <div v-if="Object.keys(fichas).length === 0">
@@ -479,16 +485,6 @@ const App = {
           <p style="font-size:12px;">{{ ficha.inventario }}</p>
           <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
         </div>
-
-        <div style="text-align:center; margin:10px 0;">
-  <button
-    @click="atualizarRolagens"
-    style="padding:6px 12px; background:#ffa500; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-  >
-    Atualizar Rolagens
-  </button>
-</div>
-
 
         <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
         <div>
