@@ -258,6 +258,23 @@ const App = {
       if (this.logs.length > 20) this.logs.pop();
     },
 
+    async atualizarRolagens() {
+    try {
+      const roomData = await OBR.room.getMetadata();
+      for (const [key, value] of Object.entries(roomData)) {
+        if (!key.startsWith("ficha-")) continue;
+        const ficha = this.fichas[key];
+        if (ficha) {
+          ficha.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+        }
+      }
+      this.log("🔄 Rolagens atualizadas manualmente!");
+    } catch (e) {
+      this.log("❌ Erro ao atualizar rolagens: " + e.message);
+    }
+  }
+}
+
     async alterarAcoes(id, novoValor) {
   const fichaAtual = this.fichas[id];
   if (!fichaAtual) return;
@@ -462,6 +479,16 @@ const App = {
           <p style="font-size:12px;">{{ ficha.inventario }}</p>
           <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
         </div>
+
+        <div style="text-align:center; margin:10px 0;">
+  <button
+    @click="atualizarRolagens"
+    style="padding:6px 12px; background:#ffa500; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
+  >
+    Atualizar Rolagens
+  </button>
+</div>
+
 
         <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
         <div>
