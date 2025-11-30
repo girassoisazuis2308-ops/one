@@ -101,7 +101,7 @@ const App = {
       this.log("❌ Erro ao inicializar OBR: " + (err.message || err));
     }
   });
-}
+},
 
   watch: {
     nome: "salvarFicha",
