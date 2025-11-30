@@ -102,7 +102,6 @@ const App = {
     }
   });
 }
-  },
 
   watch: {
     nome: "salvarFicha",
