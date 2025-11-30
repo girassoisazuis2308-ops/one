@@ -70,26 +70,49 @@ const App = {
 
         // Listeners ao vivo para o Mestre
        OBR.room.onMetadataChange((metadata) => {
-          const novas = {};
-        
-          for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("ficha-")) {
-              value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-              novas[key] = value;
-            }
+        const novas = {};
+      
+        for (const [key, value] of Object.entries(metadata)) {
+          if (key.startsWith("ficha-")) {
+            value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+            novas[key] = value;
           }
-        
-          // 🔥 Não substituir o objeto inteiro!
-          for (const [key, ficha] of Object.entries(novas)) {
-            if (!this.fichas[key]) {
-              this.fichas[key] = ficha;
-            } else {
-          
-              // 🔥 FIX DEFINITIVO DOS RESETES DE AÇÕES
-              Object.assign(this.fichas[key], {
-                ...ficha,
-                _acoes: ficha._acoes ?? this.fichas[key]._acoes ?? 3
-              });
+        }
+      
+        // Mescla sem sobrescrever _acoes quando a entrada não traz esse campo
+        for (const [key, ficha] of Object.entries(novas)) {
+          if (!this.fichas[key]) {
+            // se não tinha localmente, usa a ficha (garantir _acoes padrão)
+            this.fichas[key] = {
+              ...ficha,
+              _acoes: ficha._acoes ?? 3
+            };
+          } else {
+            // já existe localmente -> mesclar campo a campo
+            const existente = this.fichas[key];
+      
+            // copie todos os campos vindos, mas preserve _acoes se não vier
+            Object.assign(existente, {
+              nome: ficha.nome ?? existente.nome,
+              vida: ficha.vida ?? existente.vida,
+              ruina: ficha.ruina ?? existente.ruina,
+              tipo: ficha.tipo ?? existente.tipo,
+              atributo: ficha.atributo ?? existente.atributo,
+              inventario: (ficha.inventario !== undefined) ? ficha.inventario : existente.inventario,
+              ultimoResultado: (ficha.ultimoResultado !== undefined) ? ficha.ultimoResultado : existente.ultimoResultado,
+              ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
+              _acoes: (ficha._acoes !== undefined) ? ficha._acoes : (existente._acoes ?? 3)
+            });
+    }
+  }
+
+  // monstros apenas atualizam eles mesmos
+  if (metadata.monstros) {
+    const valores = metadata.monstros.split("|").map(v => Number(v));
+    this.monstros = valores.map(v => ({ vida: v }));
+  }
+});
+
           
             }
           }
@@ -133,32 +156,40 @@ const App = {
     },
 
     async salvarFicha() {
-      clearTimeout(this.salvarTimeout);
+  clearTimeout(this.salvarTimeout);
 
-      this.salvarTimeout = setTimeout(async () => {
-        try {
-          const playerId = await OBR.player.getId();
+  this.salvarTimeout = setTimeout(async () => {
+    try {
+      const playerId = await OBR.player.getId();
 
-          await OBR.room.setMetadata({
-            [`ficha-${playerId}`]: {
-              nome: this.nome,
-              vida: this.vida,
-              ruina: this.ruina,
-              tipo: this.tipo,
-              atributo: this.atributo,
-              inventario: this.inventario,
-              ultimoResultado: this.ultimoResultado,
-              ultimasRolagens: this.ultimasRolagens.join("|"),
-              _acoes: this._acoes,
-            }
-          });
+      // Monta o objeto sem _acoes quando não for Mestre
+      const payload = {
+        nome: this.nome,
+        vida: this.vida,
+        ruina: this.ruina,
+        tipo: this.tipo,
+        atributo: this.atributo,
+        inventario: this.inventario,
+        ultimoResultado: this.ultimoResultado,
+        ultimasRolagens: this.ultimasRolagens.join("|"),
+      };
 
-          this.log("💾 Ficha salva: " + this.nome);
-        } catch (e) {
-          this.log("❌ Erro ao salvar: " + e.message);
-        }
-      }, 700);
-    },
+      // Apenas o Mestre envia/atualiza _acoes
+      if (this.isMestre) {
+        payload._acoes = this._acoes;
+      }
+
+      await OBR.room.setMetadata({
+        [`ficha-${playerId}`]: payload
+      });
+
+      this.log("💾 Ficha salva: " + this.nome);
+    } catch (e) {
+      this.log("❌ Erro ao salvar: " + e.message);
+    }
+  }, 700);
+},
+
 
     trocarPagina(p) {
       this.page = p;
