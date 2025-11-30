@@ -104,8 +104,10 @@ const App = {
           }
         }
 
-        // 🔥 FORÇA o Vue a re-renderizar ao receber múltiplas rolagens simultâneas
-            this.fichas = { ...this.fichas };
+        this.fichas = Object.fromEntries(
+          Object.entries(this.fichas).map(([k, v]) => [k, { ...v }])
+        );
+
       
         // Atualiza monstros
         if (metadata.monstros) {
