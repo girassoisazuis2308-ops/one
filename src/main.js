@@ -54,9 +54,19 @@ const App = {
         const minhaFicha = roomData[`ficha-${playerId}`];
 
         if (minhaFicha) {
-          Object.assign(this, minhaFicha);
-          this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
-        }
+            // Carrega os dados da ficha no componente
+            Object.assign(this, minhaFicha);
+          
+            // Normaliza rolagens
+            this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
+          
+            // Garante que _acoes existe (para fichas antigas)
+            if (this._acoes === undefined) this._acoes = 3;
+          } else {
+            // Se não existir ficha, inicializa com valores padrões
+            this._acoes = 3; 
+          }
+
 
         // Listeners ao vivo para o Mestre
         OBR.room.onMetadataChange((metadata) => {
@@ -113,6 +123,7 @@ const App = {
               inventario: this.inventario,
               ultimoResultado: this.ultimoResultado,
               ultimasRolagens: this.ultimasRolagens.join("|"),
+              _acoes: this._acoes ?? 3,
             },
           });
 
