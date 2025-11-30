@@ -386,7 +386,7 @@ const App = {
           </div>
         </div>
 
-        <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
+        <div class="field" v-if="ultimoResultado" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
           <div style="display:flex; align-items:center; gap:6px; width:100%; position:relative;">
             <label>Resultado</label>
 
@@ -427,7 +427,7 @@ const App = {
                 white-space:nowrap;
               "
             >
-              <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
+              <div v-for="(r, i) in (ultimasRolagens || [])" :key="i" style="font-size:14px;">
                 {{ r }}
               </div>
             </div>
