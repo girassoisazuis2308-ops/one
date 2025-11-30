@@ -69,58 +69,38 @@ const App = {
 
         // Listener ao vivo para o Mestre
         OBR.room.onMetadataChange((metadata) => {
-          try {
-            this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
+  try {
+    this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
 
-            for (const [key, value] of Object.entries(metadata)) {
-              if (!key.startsWith("ficha-")) continue;
+    const novoMapa = {};
 
-              // clone do incoming (p/ não mexer no original)
-              const incoming = { ...value };
+    // Reconstrói TODAS as fichas do zero SEMPRE que qualquer metadata muda
+    for (const [key, value] of Object.entries(metadata)) {
+      if (!key.startsWith("ficha-")) continue;
 
-              // normaliza ultimasRolagens no clone (sempre ficará array)
-              incoming.ultimasRolagens = this.normalizarRolagens(incoming.ultimasRolagens);
+      // Normaliza
+      const ficha = { ...value };
+      ficha.ultimasRolagens = this.normalizarRolagens(ficha.ultimasRolagens);
+      ficha._acoes = ficha._acoes ?? 3;
 
-              const existente = this.fichas[key] ?? {};
+      novoMapa[key] = ficha;
+    }
 
-              // Faz merge seguro: só sobrescreve se incoming tiver o campo definido
-              const merged = { ...existente }; // começa com o existente
+    // --- ATUALIZAÇÃO ATÔMICA ---
+    this.fichas = novoMapa;
+    // ----------------------------
 
-              for (const prop of Object.keys(incoming)) {
-                // evita sobrescrever com undefined
-                if (incoming[prop] !== undefined) {
-                  merged[prop] = incoming[prop];
-                }
-              }
+    // Monstros
+    if (metadata.monstros) {
+      const valores = metadata.monstros.split("|").map(v => Number(v));
+      this.monstros = valores.map(v => ({ vida: v }));
+    }
 
-              // garantir que ultimasRolagens seja sempre um array novo (para reatividade)
-              merged.ultimasRolagens = Array.isArray(incoming.ultimasRolagens)
-                ? [...incoming.ultimasRolagens]
-                : Array.isArray(existente.ultimasRolagens)
-                  ? [...existente.ultimasRolagens]
-                  : [];
+  } catch (err) {
+    this.log("❌ Erro no onMetadataChange: " + (err.message || err));
+  }
+});
 
-              // garantir _acoes preservado quando não vier
-              merged._acoes = (incoming._acoes !== undefined) ? incoming._acoes : (existente._acoes ?? 3);
-
-              // substitui a ficha inteira no mapa (força reatividade)
-              this.fichas = { ...this.fichas, [key]: merged };
-            }
-
-            // Monstros (mantém igual)
-            if (metadata.monstros) {
-              const valores = metadata.monstros.split("|").map(v => Number(v));
-              this.monstros = valores.map(v => ({ vida: v }));
-            }
-          } catch (err) {
-            this.log("❌ Erro no onMetadataChange: " + (err.message || err));
-          }
-        });
-
-      } catch (e) {
-        this.log("❌ Erro na inicialização: " + (e.message || e));
-      }
-    });
   },
 
   watch: {
