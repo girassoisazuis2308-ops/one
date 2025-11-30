@@ -269,65 +269,62 @@ OBR.room.onMetadataChange((metadata) => {
 
     async atualizarRolagens() {
   try {
-    this.log("🔄 FORÇANDO atualização de rolagens...");
+    this.log("🔄 FORÇANDO ATUALIZAÇÃO COMPLETA...");
     
+    // 🔥 LIMPA o cache local primeiro
+    this.fichas = {};
+    
+    // 🔥 FORÇA uma nova requisição ao metadata
     const roomData = await OBR.room.getMetadata();
+    
+    // 🔥 AGUARDA um pouco para garantir que os dados estão frescos
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     const playerId = await OBR.player.getId();
     let atualizouAlgo = false;
     
-    this.log(`📁 Metadata keys: ${Object.keys(roomData).filter(k => k.startsWith('ficha-')).join(', ')}`);
+    this.log(`📁 Encontradas ${Object.keys(roomData).filter(k => k.startsWith('ficha-')).length} fichas no metadata`);
     
+    // 🔥 RECRIA completamente todas as fichas
     for (const [key, value] of Object.entries(roomData)) {
       if (key.startsWith("ficha-")) {
         const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
         
-        this.log(`🔍 Processando ${key}: ${rolagensNormalizadas.length} rolagens -> ${rolagensNormalizadas.join(' | ')}`);
+        // 🔥 CRIA NOVA FICHA com todos os dados
+        this.fichas[key] = {
+          nome: value.nome || '',
+          vida: value.vida ?? 3,
+          ruina: value.ruina ?? 3,
+          tipo: value.tipo || 'Combatente',
+          atributo: value.atributo || 'Força',
+          inventario: value.inventario || '',
+          ultimoResultado: value.ultimoResultado || '',
+          ultimasRolagens: rolagensNormalizadas,
+          _acoes: value._acoes ?? 3
+        };
         
-        // 🔥 FORÇA ATUALIZAÇÃO SEM COMPARAR
-        if (this.fichas[key]) {
-          const rolagensAntigas = this.fichas[key].ultimasRolagens.join(' | ');
-          const rolagensNovas = rolagensNormalizadas.join(' | ');
-          
-          this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-          this.fichas[key].ultimoResultado = value.ultimoResultado || '';
-          atualizouAlgo = true;
-          
-          this.log(`📊 ${this.fichas[key].nome}: ${rolagensAntigas} → ${rolagensNovas}`);
-        } else {
-          this.fichas[key] = {
-            nome: value.nome || '',
-            vida: value.vida ?? 3,
-            ruina: value.ruina ?? 3,
-            tipo: value.tipo || 'Combatente',
-            atributo: value.atributo || 'Força',
-            inventario: value.inventario || '',
-            ultimoResultado: value.ultimoResultado || '',
-            ultimasRolagens: rolagensNormalizadas,
-            _acoes: value._acoes ?? 3
-          };
-          atualizouAlgo = true;
-          this.log(`🆕 Nova ficha: ${value.nome || 'Sem nome'}`);
-        }
+        this.log(`📋 ${value.nome || 'Sem nome'}: ${rolagensNormalizadas.join(' | ')}`);
         
-        // Atualiza ficha do jogador atual
+        // 🔥 Atualiza ficha do jogador atual
         if (key === `ficha-${playerId}`) {
           this.ultimasRolagens = rolagensNormalizadas;
           if (rolagensNormalizadas.length > 0) {
             this.ultimoResultado = rolagensNormalizadas[0];
           }
-          atualizouAlgo = true;
         }
+        
+        atualizouAlgo = true;
       }
     }
     
     if (atualizouAlgo) {
-      this.log("✅ Todas as rolagens foram forçadamente atualizadas!");
+      this.log("✅ CACHE LIMPO - Todas as fichas recarregadas do metadata!");
     } else {
-      this.log("❌ Nenhuma ficha encontrada para atualizar.");
+      this.log("❌ Nenhuma ficha encontrada no metadata.");
     }
     
   } catch (e) {
-    this.log("❌ Erro ao atualizar rolagens: " + e.message);
+    this.log("❌ Erro crítico ao atualizar: " + e.message);
   }
 },
 
