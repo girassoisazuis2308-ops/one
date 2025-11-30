@@ -68,61 +68,56 @@ const App = {
           this.monstros = valores.map(v => ({ vida: v }));
         }
 
-              // Listeners ao vivo para o Mestre
-        OBR.room.onMetadataChange((metadata) => {
-                const novas = {};
-              
-                for (const [key, value] of Object.entries(metadata)) {
-                  if (key.startsWith("ficha-")) {
-              
-                    // 🔥 CLONE PRIMEIRO
-                    const fichaClonada = { ...value };
-              
-                    // 🔥 NORMALIZA NO CLONE, NÃO NO VALUE ORIGINAL
-                    fichaClonada.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-              
-                    novas[key] = fichaClonada;
+       // Substitua o bloco OBR.room.onMetadataChange(...) pelo código abaixo
+          OBR.room.onMetadataChange((metadata) => {
+            try {
+              this.log("🔁 onMetadataChange: " + Object.keys(metadata).join(", "));
+          
+              for (const [key, value] of Object.entries(metadata)) {
+                if (!key.startsWith("ficha-")) continue;
+          
+                // clone do incoming (p/ não mexer no original)
+                const incoming = { ...value };
+          
+                // normaliza ultimasRolagens no clone (sempre ficará array)
+                incoming.ultimasRolagens = this.normalizarRolagens(incoming.ultimasRolagens);
+          
+                const existente = this.fichas[key] ?? {};
+          
+                // Faz merge seguro: só sobrescreve se incoming tiver o campo definido
+                const merged = { ...existente }; // começa com o existente
+          
+                for (const prop of Object.keys(incoming)) {
+                  // evita sobrescrever com undefined
+                  if (incoming[prop] !== undefined) {
+                    merged[prop] = incoming[prop];
                   }
                 }
-              
-                // Mescla sem sobrescrever campos importantes
-                for (const [key, ficha] of Object.entries(novas)) {
-                  if (!this.fichas[key]) {
-              
-                    this.fichas[key] = {
-                      ...ficha,
-                      _acoes: ficha._acoes ?? 3
-                    };
-              
-                  } else {
-                    
-                   this.fichas[key] = {
-                    ...this.fichas[key],     // mantém o que existe
-                    ...ficha,                // aplica o que veio do servidor
-                    ultimasRolagens: [...(Array.isArray(ficha.ultimasRolagens)
-                      ? ficha.ultimasRolagens
-                      : this.fichas[key]?.ultimasRolagens || [])]
-                  };
+          
+                // garantir que ultimasRolagens seja sempre um array novo (para reatividade)
+                merged.ultimasRolagens = Array.isArray(incoming.ultimasRolagens)
+                  ? [...incoming.ultimasRolagens]
+                  : Array.isArray(existente.ultimasRolagens)
+                    ? [...existente.ultimasRolagens]
+                    : [];
+          
+                // garantir _acoes preservado quando não vier
+                merged._acoes = (incoming._acoes !== undefined) ? incoming._acoes : (existente._acoes ?? 3);
+          
+                // substitui a ficha inteira no mapa (força reatividade)
+                this.fichas = { ...this.fichas, [key]: merged };
+              }
+          
+              // Monstros (mantém igual)
+              if (metadata.monstros) {
+                const valores = metadata.monstros.split("|").map(v => Number(v));
+                this.monstros = valores.map(v => ({ vida: v }));
+              }
+            } catch (err) {
+              this.log("❌ Erro no onMetadataChange: " + (err.message || err));
+            }
+          });
 
-                  }
-                }
-              
-                // 🔥 Reatividade profunda real
-                this.fichas = Object.fromEntries(
-                  Object.entries(this.fichas).map(([k, v]) => [k, { ...v }])
-                );
-              
-                // Monstros
-                if (metadata.monstros) {
-                  const valores = metadata.monstros.split("|").map(v => Number(v));
-                  this.monstros = valores.map(v => ({ vida: v }));
-                }
-              });
-
-                } catch (e) {
-          this.log("❌ Erro na inicialização: " + (e.message || e));
-        }
-      });
 
 
   },
@@ -173,6 +168,10 @@ const App = {
       if (this.isMestre) {
         payload._acoes = this._acoes;
       }
+
+      // 🔥 ADICIONE AQUI:
+      this.log(`→ salvarFicha payload: ficha-${playerId} = ${JSON.stringify(payload)}`);
+
 
       await OBR.room.setMetadata({
         [`ficha-${playerId}`]: payload
