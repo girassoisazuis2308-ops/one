@@ -207,6 +207,27 @@ const App = {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
       if (this.logs.length > 20) this.logs.pop();
     },
+    
+    async alterarAcoes(id, novoValor) {
+  const ficha = this.fichas[id];
+  if (!ficha) return;
+
+  ficha._acoes = novoValor;
+
+  try {
+    await OBR.room.setMetadata({
+      [id]: {
+        ...ficha,
+        ultimasRolagens: ficha.ultimasRolagens.join("|")
+      }
+    });
+
+    this.log(`🔧 GM alterou ações de ${ficha.nome} para ${novoValor}`);
+  } catch (e) {
+    this.log("❌ Erro ao alterar ações: " + e.message);
+  }
+}
+
   },
 
   template: `
@@ -364,13 +385,13 @@ const App = {
 
             <!-- CONTADOR BONITO IGUAL VIDA -->
             <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-              <button @click="ficha._acoes = (ficha._acoes ?? 3) - 1">−</button>
+              <button @click="alterarAcoes(id, (ficha._acoes ?? 3) - 1)">−</button>
 
               <span style="display:inline-block;">
                 {{ ficha._acoes ?? 3 }}
               </span>
 
-              <button @click="ficha._acoes = (ficha._acoes ?? 3) + 1">+</button>
+              <button @click="alterarAcoes(id, (ficha._acoes ?? 3) + 1)">+</button>
             </div>
 
           </div>
