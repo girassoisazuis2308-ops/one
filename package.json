@@ -2,13 +2,17 @@
   "name": "ficha-one-owlbear",
   "version": "1.0.0",
   "description": "Ficha para RPG ONE no Owlbear Rodeo",
-  "main": "index.html",
+  "type": "module",
   "scripts": {
-    "start": "npx serve -s -p 10000",
-    "build": "echo 'No build needed - using CDN'",
-    "dev": "npx serve -s -p 10000"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite preview --port 10000"
   },
   "dependencies": {
-    "@owlbear-rodeo/sdk": "^3.1.0"
+    "@owlbear-rodeo/sdk": "^1.2.0"
+  },
+  "devDependencies": {
+    "vite": "^4.4.5"
   }
 }
