@@ -37,7 +37,7 @@ const App = {
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
-        // Carregar todas as fichas já existentes
+        // Carregar todas as fichas já s
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
 
@@ -95,24 +95,14 @@ const App = {
                     };
               
                   } else {
-                    const existente = this.fichas[key];
-              
-                    Object.assign(existente, {
-                      nome: ficha.nome ?? existente.nome,
-                      vida: ficha.vida ?? existente.vida,
-                      ruina: ficha.ruina ?? existente.ruina,
-                      tipo: ficha.tipo ?? existente.tipo,
-                      atributo: ficha.atributo ?? existente.atributo,
-                      inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
-                      ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
                     
-                      // 🔥 AQUI ESTÁ A CORREÇÃO FINAL
-                      ultimasRolagens: Array.isArray(ficha.ultimasRolagens)
-                        ? [...ficha.ultimasRolagens]
-                        : [...existente.ultimasRolagens],
-                    
-                      _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
-                    });
+                   this.fichas[key] = {
+                    ...this.fichas[key],     // mantém o que existe
+                    ...ficha,                // aplica o que veio do servidor
+                    ultimasRolagens: [...(Array.isArray(ficha.ultimasRolagens)
+                      ? ficha.ultimasRolagens
+                      : this.fichas[key]?.ultimasRolagens || [])]
+                  };
 
                   }
                 }
