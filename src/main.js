@@ -55,10 +55,11 @@ const App = {
         if (minhaFicha) {
           Object.assign(this, minhaFicha);
           this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
-          if (this._acoes === undefined) this._acoes = 3;
+          if (this._acoes === undefined) this._acoes = minhaFicha._acoes ?? 3;
         } else {
           this._acoes = 3;
         }
+
 
         // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
         if (roomData.monstros) {
@@ -132,7 +133,7 @@ const App = {
               inventario: this.inventario,
               ultimoResultado: this.ultimoResultado,
               ultimasRolagens: this.ultimasRolagens.join("|"),
-              _acoes: this._acoes ?? 3,
+              _acoes: this._acoes,
             }
           });
 
