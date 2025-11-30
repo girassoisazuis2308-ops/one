@@ -247,11 +247,17 @@ const App = {
   const fichaAtual = this.fichas[id];
   if (!fichaAtual) return;
 
-  // Cria um clone limpo da ficha atual
+  // 🔥 Cria um clone completo da ficha ANTES do envio
   const fichaParaSalvar = {
-    ...fichaAtual,
+    nome: fichaAtual.nome,
+    vida: fichaAtual.vida,
+    ruina: fichaAtual.ruina,
+    tipo: fichaAtual.tipo,
+    atributo: fichaAtual.atributo,
+    inventario: fichaAtual.inventario,
+    ultimoResultado: fichaAtual.ultimoResultado,
+    ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
     _acoes: novoValor,
-    ultimasRolagens: fichaAtual.ultimasRolagens.join("|")
   };
 
   try {
@@ -259,9 +265,12 @@ const App = {
       [id]: fichaParaSalvar
     });
 
-    this.fichas[id]._acoes = novoValor; 
+    // Atualiza localmente sem sobrescrever a ficha inteira
+    this.fichas[id]._acoes = novoValor;
+
+    this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
   } catch (e) {
-    console.error("Erro ao alterar ações:", e);
+    this.log("❌ Erro ao alterar ações: " + e.message);
   }
 }
 
