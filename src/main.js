@@ -18,13 +18,8 @@ const App = {
       logs: [],
       isMestre: false,
       rolando: false,
-      monstros: [],
+      monstros: [], // 🔥 MONSTROS (MELHORIA)
       _acoes: 3,
-      // Sistema de fila
-      filaSalvamento: [],
-      processandoFila: false,
-      ultimoSalvamento: 0,
-      atualizandoFicha: false,
     };
   },
 
@@ -42,6 +37,7 @@ const App = {
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
+        // Carregar todas as fichas já existentes
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
 
@@ -54,8 +50,9 @@ const App = {
 
         this.fichas = fichasAtuais;
 
-        // Carrega a própria ficha
+        // Carregar minha própria ficha
         const minhaFicha = roomData[`ficha-${playerId}`];
+
         if (minhaFicha) {
           Object.assign(this, minhaFicha);
           this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
@@ -64,68 +61,69 @@ const App = {
           this._acoes = 3;
         }
 
-        // Carrega monstros salvos
+
+        // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
         if (roomData.monstros) {
-          const valores = roomData.monstros.split("|").map(Number);
+          const valores = roomData.monstros.split("|").map(v => Number(v));
           this.monstros = valores.map(v => ({ vida: v }));
         }
 
-        // Listener para atualização em tempo real
-        OBR.room.onMetadataChange((metadata) => {
-          if (this.atualizandoFicha) return;
-
-          const minhaFichaId = `ficha-${playerId}`;
-
-          // Monstros
-          if (metadata.monstros !== undefined) {
-            const valores = metadata.monstros.split("|").map(Number);
-            this.monstros = valores.map(v => ({ vida: v }));
+              // Listeners ao vivo para o Mestre
+      OBR.room.onMetadataChange((metadata) => {
+        const novas = {};
+      
+        for (const [key, value] of Object.entries(metadata)) {
+          if (key.startsWith("ficha-")) {
+            value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+            novas[key] = value;
           }
-
-          // Fichas de outros jogadores
-          for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("ficha-") && key !== minhaFichaId) {
-              const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
-
-              if (!this.fichas[key]) {
-                this.fichas[key] = { 
-                  ...value, 
-                  ultimasRolagens: rolagensNormalizadas,
-                  _acoes: value._acoes ?? 3
-                };
-              } else {
-                // Atualiza apenas se mudou
-                if (JSON.stringify(this.fichas[key].ultimasRolagens) !== JSON.stringify(rolagensNormalizadas)) {
-                  this.fichas[key].ultimasRolagens = rolagensNormalizadas;
-                }
-                if (this.fichas[key].ultimoResultado !== value.ultimoResultado) {
-                  this.fichas[key].ultimoResultado = value.ultimoResultado;
-                }
-                this.fichas[key].vida = value.vida;
-                this.fichas[key].ruina = value.ruina;
-                this.fichas[key].nome = value.nome;
-                this.fichas[key].tipo = value.tipo;
-                this.fichas[key].atributo = value.atributo;
-                this.fichas[key].inventario = value.inventario;
-                if (value._acoes !== undefined) this.fichas[key]._acoes = value._acoes;
-              }
-            }
+        }
+      
+        // Mescla sem sobrescrever campos importantes
+        for (const [key, ficha] of Object.entries(novas)) {
+          if (!this.fichas[key]) {
+            this.fichas[key] = {
+              ...ficha,
+              _acoes: ficha._acoes ?? 3
+            };
+          } else {
+            const existente = this.fichas[key];
+            Object.assign(existente, {
+              nome: ficha.nome ?? existente.nome,
+              vida: ficha.vida ?? existente.vida,
+              ruina: ficha.ruina ?? existente.ruina,
+              tipo: ficha.tipo ?? existente.tipo,
+              atributo: ficha.atributo ?? existente.atributo,
+              inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
+              ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
+              ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
+              _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
+            });
           }
-        });
-      } catch (e) {
-        this.log("❌ Erro na inicialização: " + (e.message || e));
-      }
-    });
+        }
+      
+        // Atualiza monstros
+        if (metadata.monstros) {
+          const valores = metadata.monstros.split("|").map(v => Number(v));
+          this.monstros = valores.map(v => ({ vida: v }));
+        }
+      });
+                } catch (e) {
+          this.log("❌ Erro na inicialização: " + (e.message || e));
+        }
+      });
+
+
   },
 
   watch: {
     nome: "salvarFicha",
     vida(value) {
-      if (value < 0) this.vida = 0;
+      if (value < 0) this.vida = 0; // 🔥 MELHORIA 1
       this.salvarFicha();
     },
     ruina(value) {
-      if (value < 0) this.ruina = 0;
+      if (value < 0) this.ruina = 0; // 🔥 MELHORIA 1
       this.salvarFicha();
     },
     tipo: "salvarFicha",
@@ -141,83 +139,47 @@ const App = {
       return [];
     },
 
-    // Fila de salvamento
-    async adicionarNaFila(payload, playerId) {
-      this.filaSalvamento.push({ payload, playerId, timestamp: Date.now() });
-      this.log(`📦 Adicionado na fila: ${payload.nome} (${this.filaSalvamento.length} na fila)`);
-
-      if (!this.processandoFila) {
-        this.processarFila();
-      }
-    },
-
-    async processarFila() {
-      if (this.processandoFila || this.filaSalvamento.length === 0) return;
-      this.processandoFila = true;
-
-      while (this.filaSalvamento.length > 0) {
-        const item = this.filaSalvamento[0];
-        const agora = Date.now();
-
-        if (agora - this.ultimoSalvamento < 500) {
-          await new Promise(r => setTimeout(r, 500 - (agora - this.ultimoSalvamento)));
-        }
-
-        try {
-          await OBR.room.setMetadata({
-            [`ficha-${item.playerId}`]: item.payload
-          });
-
-          this.ultimoSalvamento = Date.now();
-          this.filaSalvamento.shift();
-          this.log(`✅ Salvado da fila: ${item.payload.nome} (${this.filaSalvamento.length} restantes)`);
-          await new Promise(r => setTimeout(r, 100));
-        } catch (e) {
-          this.log(`❌ Erro ao salvar ${item.payload.nome}: ${e.message}`);
-          this.filaSalvamento.shift();
-          await new Promise(r => setTimeout(r, 500));
-        }
-      }
-
-      this.processandoFila = false;
-      this.log("🎯 Fila de salvamento concluída");
-    },
-
     async salvarFicha() {
-      clearTimeout(this.salvarTimeout);
+  clearTimeout(this.salvarTimeout);
 
-      this.salvarTimeout = setTimeout(async () => {
-        try {
-          const playerId = await OBR.player.getId();
-          this.atualizandoFicha = true;
+  this.salvarTimeout = setTimeout(async () => {
+    try {
+      const playerId = await OBR.player.getId();
 
-          const payload = {
-            nome: this.nome,
-            vida: this.vida,
-            ruina: this.ruina,
-            tipo: this.tipo,
-            atributo: this.atributo,
-            inventario: this.inventario,
-            ultimoResultado: this.ultimoResultado,
-            ultimasRolagens: this.ultimasRolagens.join("|"),
-          };
+      // Monta o objeto sem _acoes quando não for Mestre
+      const payload = {
+        nome: this.nome,
+        vida: this.vida,
+        ruina: this.ruina,
+        tipo: this.tipo,
+        atributo: this.atributo,
+        inventario: this.inventario,
+        ultimoResultado: this.ultimoResultado,
+        ultimasRolagens: this.ultimasRolagens.join("|"),
+      };
 
-          if (this.isMestre) payload._acoes = this._acoes;
+      // Apenas o Mestre envia/atualiza _acoes
+      if (this.isMestre) {
+        payload._acoes = this._acoes;
+      }
 
-          this.adicionarNaFila(payload, playerId);
+      await OBR.room.setMetadata({
+        [`ficha-${playerId}`]: payload
+      });
 
-          setTimeout(() => this.atualizandoFicha = false, 500);
-        } catch (e) {
-          this.log("❌ Erro ao preparar salvamento: " + e.message);
-          this.atualizandoFicha = false;
-        }
-      }, 800);
-    },
+      this.log("💾 Ficha salva: " + this.nome);
+    } catch (e) {
+      this.log("❌ Erro ao salvar: " + e.message);
+    }
+  }, 700);
+},
+
 
     trocarPagina(p) {
       this.page = p;
     },
 
+    // 🔥 MELHORIA 2: SALVAR MONSTROS
     async salvarMonstros() {
       try {
         await OBR.room.setMetadata({
@@ -246,9 +208,11 @@ const App = {
       try {
         const roomData = await OBR.room.getMetadata();
         const updates = {};
+
         for (const key of Object.keys(roomData)) {
           if (key.startsWith("ficha-")) updates[key] = undefined;
         }
+
         await OBR.room.setMetadata(updates);
         this.fichas = {};
         this.log("🧹 Todas as fichas foram limpas!");
@@ -269,90 +233,65 @@ const App = {
       await new Promise(res => setTimeout(res, 1000));
 
       const valor = Math.floor(Math.random() * max) + 1;
-      const novaRolagem = `${tipo} → ${valor}`;
 
-      this.ultimasRolagens.unshift(novaRolagem);
+      this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
       if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
 
-      this.ultimoResultado = novaRolagem;
+      this.ultimoResultado = this.ultimasRolagens[0];
+
       this.salvarFicha();
       this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
 
       this.rolando = false;
     },
 
-    rolarD10() { return this.rolarDado(10, "D10"); },
-    rolarD4() { return this.rolarDado(4, "D4"); },
+    rolarD10() {
+      return this.rolarDado(10, "D10");
+    },
+
+    rolarD4() {
+      return this.rolarDado(4, "D4");
+    },
 
     log(msg) {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
       if (this.logs.length > 20) this.logs.pop();
     },
 
-    async atualizarRolagens() {
-      try {
-        this.log("🔍 Verificando rolagens pendentes...");
-        const roomData = await OBR.room.getMetadata();
-        const playerId = await OBR.player.getId();
-        let atualizacoes = 0;
-
-        for (const [key, value] of Object.entries(roomData)) {
-          if (key.startsWith("ficha-") && key !== `ficha-${playerId}`) {
-            const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
-            const fichaAtual = this.fichas[key];
-
-            if (fichaAtual) {
-              const rolagensAtuais = fichaAtual.ultimasRolagens.join('|');
-              const rolagensNovas = rolagensNormalizadas.join('|');
-
-              if (rolagensAtuais !== rolagensNovas) {
-                const outroPlayerId = key.replace('ficha-', '');
-                this.adicionarNaFila({
-                  ...value,
-                  ultimasRolagens: value.ultimasRolagens,
-                  ultimoResultado: value.ultimoResultado
-                }, outroPlayerId);
-
-                atualizacoes++;
-                this.log(`📦 ${fichaAtual.nome}: Adicionado na fila para sincronizar`);
-              }
-            }
-          }
-        }
-
-        if (atualizacoes > 0) this.log(`🔄 ${atualizacoes} fichas na fila para sincronização`);
-        else this.log("💡 Todas as fichas já estão sincronizadas");
-      } catch (e) {
-        this.log("❌ Erro ao verificar rolagens: " + e.message);
-      }
-    },
-
     async alterarAcoes(id, novoValor) {
-      const fichaAtual = this.fichas[id];
-      if (!fichaAtual) return;
+  const fichaAtual = this.fichas[id];
+  if (!fichaAtual) return;
 
-      const fichaParaSalvar = {
-        nome: fichaAtual.nome,
-        vida: fichaAtual.vida,
-        ruina: fichaAtual.ruina,
-        tipo: fichaAtual.tipo,
-        atributo: fichaAtual.atributo,
-        inventario: fichaAtual.inventario,
-        ultimoResultado: fichaAtual.ultimoResultado,
-        ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
-        _acoes: novoValor,
-      };
+  // 🔥 Cria um clone completo da ficha ANTES do envio
+  const fichaParaSalvar = {
+    nome: fichaAtual.nome,
+    vida: fichaAtual.vida,
+    ruina: fichaAtual.ruina,
+    tipo: fichaAtual.tipo,
+    atributo: fichaAtual.atributo,
+    inventario: fichaAtual.inventario,
+    ultimoResultado: fichaAtual.ultimoResultado,
+    ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
+    _acoes: novoValor,
+  };
 
-      try {
-        const playerId = id.replace('ficha-', '');
-        this.adicionarNaFila(fichaParaSalvar, playerId);
-        this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
-      } catch (e) {
-        this.log("❌ Erro ao alterar ações: " + e.message);
-      }
-    }
+  try {
+    await OBR.room.setMetadata({
+      [id]: fichaParaSalvar
+    });
+
+    // Atualiza localmente sem sobrescrever a ficha inteira
+    this.fichas[id]._acoes = novoValor;
+
+    this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
+  } catch (e) {
+    this.log("❌ Erro ao alterar ações: " + e.message);
+  }
+}
+
+
   },
-
+  
   template: `
     <div>
       <nav>
@@ -430,7 +369,7 @@ const App = {
           </div>
         </div>
 
-        <div class="field" v-if="ultimoResultado" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
+        <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
           <div style="display:flex; align-items:center; gap:6px; width:100%; position:relative;">
             <label>Resultado</label>
 
@@ -471,7 +410,7 @@ const App = {
                 white-space:nowrap;
               "
             >
-              <div v-for="(r, i) in (ultimasRolagens || [])" :key="i" style="font-size:14px;">
+              <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
                 {{ r }}
               </div>
             </div>
@@ -493,13 +432,6 @@ const App = {
             style="width: 80px; padding: 4px 8px; background: linear-gradient(135deg, #7C5CFF, #9B7BFF); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"
           >
             Limpar
-          </button>
-          <button
-            @click="atualizarRolagens"
-            :disabled="processandoFila"
-            style="padding:6px 12px; background:#28a745; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer; margin-left: 10px;"
-          >
-            🔄 {{ processandoFila ? `Processando... (${filaSalvamento.length})` : 'Sincronizar' }}
           </button>
         </div>
 
