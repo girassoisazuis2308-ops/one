@@ -84,9 +84,16 @@ const App = {
             if (!this.fichas[key]) {
               this.fichas[key] = ficha;
             } else {
-              Object.assign(this.fichas[key], ficha);
+          
+              // 🔥 FIX DEFINITIVO DOS RESETES DE AÇÕES
+              Object.assign(this.fichas[key], {
+                ...ficha,
+                _acoes: ficha._acoes ?? this.fichas[key]._acoes ?? 3
+              });
+          
             }
           }
+
         
           // 🔥 Monstros atualizam apenas eles mesmos
           if (metadata.monstros) {
