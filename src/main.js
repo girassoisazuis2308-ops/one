@@ -269,62 +269,49 @@ OBR.room.onMetadataChange((metadata) => {
 
     async atualizarRolagens() {
   try {
-    this.log("🔄 FORÇANDO ATUALIZAÇÃO COMPLETA...");
+    this.log("🔓 GM: Destravando fichas com modificação simulada...");
     
-    // 🔥 LIMPA o cache local primeiro
-    this.fichas = {};
-    
-    // 🔥 FORÇA uma nova requisição ao metadata
     const roomData = await OBR.room.getMetadata();
-    
-    // 🔥 AGUARDA um pouco para garantir que os dados estão frescos
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     const playerId = await OBR.player.getId();
-    let atualizouAlgo = false;
-    
-    this.log(`📁 Encontradas ${Object.keys(roomData).filter(k => k.startsWith('ficha-')).length} fichas no metadata`);
-    
-    // 🔥 RECRIA completamente todas as fichas
+    let fichasDestravadas = 0;
+
     for (const [key, value] of Object.entries(roomData)) {
-      if (key.startsWith("ficha-")) {
+      // 🔥 SÓ FICHAS DE OUTROS JOGADORES
+      if (key.startsWith("ficha-") && key !== `ficha-${playerId}`) {
         const rolagensNormalizadas = this.normalizarRolagens(value.ultimasRolagens);
+        const fichaAtual = this.fichas[key];
         
-        // 🔥 CRIA NOVA FICHA com todos os dados
-        this.fichas[key] = {
-          nome: value.nome || '',
-          vida: value.vida ?? 3,
-          ruina: value.ruina ?? 3,
-          tipo: value.tipo || 'Combatente',
-          atributo: value.atributo || 'Força',
-          inventario: value.inventario || '',
-          ultimoResultado: value.ultimoResultado || '',
-          ultimasRolagens: rolagensNormalizadas,
-          _acoes: value._acoes ?? 3
-        };
-        
-        this.log(`📋 ${value.nome || 'Sem nome'}: ${rolagensNormalizadas.join(' | ')}`);
-        
-        // 🔥 Atualiza ficha do jogador atual
-        if (key === `ficha-${playerId}`) {
-          this.ultimasRolagens = rolagensNormalizadas;
-          if (rolagensNormalizadas.length > 0) {
-            this.ultimoResultado = rolagensNormalizadas[0];
-          }
+        if (fichaAtual && rolagensNormalizadas.length > 0) {
+          // 🔥 ADICIONA UM TIMESTAMP INVISÍVEL para forçar mudança
+          const timestamp = Date.now();
+          const modificacao = ` updated:${timestamp}`;
+          
+          await OBR.room.setMetadata({
+            [key]: {
+              ...value,
+              inventario: (value.inventario || '') + modificacao,
+              ultimasRolagens: value.ultimasRolagens,
+              ultimoResultado: value.ultimoResultado
+            }
+          });
+          
+          // Atualiza localmente
+          fichaAtual.ultimasRolagens = rolagensNormalizadas;
+          fichaAtual.ultimoResultado = value.ultimoResultado;
+          fichaAtual.inventario = (value.inventario || '') + modificacao;
+          
+          fichasDestravadas++;
+          this.log(`✅ ${fichaAtual.nome}: Destravada com timestamp ${timestamp}`);
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
-        
-        atualizouAlgo = true;
       }
     }
-    
-    if (atualizouAlgo) {
-      this.log("✅ CACHE LIMPO - Todas as fichas recarregadas do metadata!");
-    } else {
-      this.log("❌ Nenhuma ficha encontrada no metadata.");
-    }
-    
+
+    this.log(`🎉 GM destravou ${fichasDestravadas} fichas com modificação simulada!`);
+
   } catch (e) {
-    this.log("❌ Erro crítico ao atualizar: " + e.message);
+    this.log("❌ Erro: " + e.message);
   }
 },
 
