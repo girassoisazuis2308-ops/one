@@ -244,24 +244,19 @@ const App = {
     },
 
     async alterarAcoes(id, novoValor) {
-      const ficha = this.fichas[id];
-      if (!ficha) return;
+  try {
+    await OBR.room.setMetadata({
+      [id]: { _acoes: novoValor }
+    });
 
-      ficha._acoes = novoValor;
+    this.fichas[id]._acoes = novoValor;
 
-      try {
-        await OBR.room.setMetadata({
-          [id]: {
-            ...ficha,
-            ultimasRolagens: ficha.ultimasRolagens.join("|")
-          }
-        });
+    this.log(`🔧 GM alterou ações de ${this.fichas[id].nome} para ${novoValor}`);
+  } catch (e) {
+    this.log("❌ Erro ao alterar ações: " + e.message);
+  }
+}
 
-        this.log(`🔧 GM alterou ações de ${ficha.nome} para ${novoValor}`);
-      } catch (e) {
-        this.log("❌ Erro ao alterar ações: " + e.message);
-      }
-    }
   },
   
   template: `
