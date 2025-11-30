@@ -160,7 +160,14 @@ const App = {
       
       this.processandoFila = true;
       
-      while (this.filaSalvamento.length > 0) {
+      // Processa um item por vez usando recursão controlada
+      const processarProximo = async () => {
+        if (this.filaSalvamento.length === 0) {
+          this.processandoFila = false;
+          this.log("🎯 Fila de salvamento concluída");
+          return;
+        }
+        
         const item = this.filaSalvamento[0];
         const agora = Date.now();
         
@@ -179,16 +186,22 @@ const App = {
           
           this.log(`✅ Salvado da fila: ${item.payload.nome} (${this.filaSalvamento.length} restantes)`);
           
+          // Pequena pausa antes do próximo
           await new Promise(resolve => setTimeout(resolve, 100));
           
         } catch (e) {
           this.log(`❌ Erro ao salvar ${item.payload.nome} da fila: ${e.message}`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // Se der erro, remove da fila e continua
+          this.filaSalvamento.shift();
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-      }
+        
+        // Processa o próximo item
+        processarProximo();
+      };
       
-      this.processandoFila = false;
-      this.log("🎯 Fila de salvamento concluída");
+      // Inicia o processamento
+      processarProximo();
     },
 
     async salvarFicha() {
