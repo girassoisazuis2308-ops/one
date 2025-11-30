@@ -69,52 +69,66 @@ const App = {
         }
 
               // Listeners ao vivo para o Mestre
-      OBR.room.onMetadataChange((metadata) => {
-        const novas = {};
-      
-        for (const [key, value] of Object.entries(metadata)) {
-          if (key.startsWith("ficha-")) {
-            value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-            novas[key] = value;
-          }
-        }
-      
-        // Mescla sem sobrescrever campos importantes
-        for (const [key, ficha] of Object.entries(novas)) {
-          if (!this.fichas[key]) {
-            this.fichas[key] = {
-              ...ficha,
-              _acoes: ficha._acoes ?? 3
-            };
-          } else {
-            const existente = this.fichas[key];
-            Object.assign(existente, {
-              nome: ficha.nome ?? existente.nome,
-              vida: ficha.vida ?? existente.vida,
-              ruina: ficha.ruina ?? existente.ruina,
-              tipo: ficha.tipo ?? existente.tipo,
-              atributo: ficha.atributo ?? existente.atributo,
-              inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
-              ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
-              ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
-              _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
+        OBR.room.onMetadataChange((metadata) => {
+                const novas = {};
               
+                for (const [key, value] of Object.entries(metadata)) {
+                  if (key.startsWith("ficha-")) {
+              
+                    // 🔥 CLONE PRIMEIRO
+                    const fichaClonada = { ...value };
+              
+                    // 🔥 NORMALIZA NO CLONE, NÃO NO VALUE ORIGINAL
+                    fichaClonada.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+              
+                    novas[key] = fichaClonada;
+                  }
+                }
+              
+                // Mescla sem sobrescrever campos importantes
+                for (const [key, ficha] of Object.entries(novas)) {
+                  if (!this.fichas[key]) {
+              
+                    this.fichas[key] = {
+                      ...ficha,
+                      _acoes: ficha._acoes ?? 3
+                    };
+              
+                  } else {
+                    const existente = this.fichas[key];
+              
+                    Object.assign(existente, {
+                      nome: ficha.nome ?? existente.nome,
+                      vida: ficha.vida ?? existente.vida,
+                      ruina: ficha.ruina ?? existente.ruina,
+                      tipo: ficha.tipo ?? existente.tipo,
+                      atributo: ficha.atributo ?? existente.atributo,
+                      inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
+                      ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
+                    
+                      // 🔥 AQUI ESTÁ A CORREÇÃO FINAL
+                      ultimasRolagens: Array.isArray(ficha.ultimasRolagens)
+                        ? [...ficha.ultimasRolagens]
+                        : [...existente.ultimasRolagens],
+                    
+                      _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
+                    });
 
-            });
-          }
-        }
+                  }
+                }
+              
+                // 🔥 Reatividade profunda real
+                this.fichas = Object.fromEntries(
+                  Object.entries(this.fichas).map(([k, v]) => [k, { ...v }])
+                );
+              
+                // Monstros
+                if (metadata.monstros) {
+                  const valores = metadata.monstros.split("|").map(v => Number(v));
+                  this.monstros = valores.map(v => ({ vida: v }));
+                }
+              });
 
-        this.fichas = Object.fromEntries(
-          Object.entries(this.fichas).map(([k, v]) => [k, { ...v }])
-        );
-
-      
-        // Atualiza monstros
-        if (metadata.monstros) {
-          const valores = metadata.monstros.split("|").map(v => Number(v));
-          this.monstros = valores.map(v => ({ vida: v }));
-        }
-      });
                 } catch (e) {
           this.log("❌ Erro na inicialização: " + (e.message || e));
         }
