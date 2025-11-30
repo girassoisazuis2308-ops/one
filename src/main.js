@@ -244,18 +244,27 @@ const App = {
     },
 
     async alterarAcoes(id, novoValor) {
+  const fichaAtual = this.fichas[id];
+  if (!fichaAtual) return;
+
+  // Cria um clone limpo da ficha atual
+  const fichaParaSalvar = {
+    ...fichaAtual,
+    _acoes: novoValor,
+    ultimasRolagens: fichaAtual.ultimasRolagens.join("|")
+  };
+
   try {
     await OBR.room.setMetadata({
-      [id]: { _acoes: novoValor }
+      [id]: fichaParaSalvar
     });
 
-    this.fichas[id]._acoes = novoValor;
-
-    this.log(`🔧 GM alterou ações de ${this.fichas[id].nome} para ${novoValor}`);
+    this.fichas[id]._acoes = novoValor; 
   } catch (e) {
-    this.log("❌ Erro ao alterar ações: " + e.message);
+    console.error("Erro ao alterar ações:", e);
   }
 }
+
 
   },
   
