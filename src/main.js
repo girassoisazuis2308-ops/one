@@ -64,9 +64,14 @@ const App = {
 
 
         // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
-        if (roomData.monstros) {
-          const valores = roomData.monstros.split("|").map(v => Number(v));
-          this.monstros = valores.map(v => ({ vida: v }));
+       if (roomData.monstros) {
+          this.monstros = roomData.monstros.split("|").map(entry => {
+            const [nome, vida] = entry.split(",");
+            return {
+              nome: nome || "Monstro",
+              vida: Number(vida) || 0,
+            };
+          });
         }
 
               // Listeners ao vivo para o Mestre
@@ -105,9 +110,15 @@ const App = {
       
         // Atualiza monstros
         if (metadata.monstros) {
-          const valores = metadata.monstros.split("|").map(v => Number(v));
-          this.monstros = valores.map(v => ({ vida: v }));
+          this.monstros = metadata.monstros.split("|").map(entry => {
+            const [nome, vida] = entry.split(",");
+            return {
+              nome: nome || "Monstro",
+              vida: Number(vida) || 0,
+            };
+          });
         }
+
       });
                 } catch (e) {
           this.log("❌ Erro na inicialização: " + (e.message || e));
@@ -189,14 +200,18 @@ const App = {
 
     // 🔥 MELHORIA 2: SALVAR MONSTROS
     async salvarMonstros() {
-      try {
-        await OBR.room.setMetadata({
-          monstros: this.monstros.map(m => m.vida).join("|"),
-        });
-      } catch (e) {
-        this.log("❌ Erro ao salvar monstros: " + e.message);
-      }
-    },
+  try {
+    const compact = this.monstros
+      .map(m => `${m.nome || ''},${m.vida}`)
+      .join("|");
+
+    await OBR.room.setMetadata({
+      monstros: compact,
+    });
+  } catch (e) {
+    this.log("❌ Erro ao salvar monstros: " + e.message);
+  }
+},
 
     adicionarMonstro() {
       this.monstros.push({ vida: 10 });
@@ -521,11 +536,27 @@ const App = {
               <div style="padding:6px; padding-top:0;">
                 <div class="stats-row" style="margin:0;">
                   <div class="stat-box">
-                    <span class="label">Monstro {{ index + 1 }}</span>
+                    <span class="label">
+                      <span
+                        contenteditable="true"
+                        @input="m.nome = $event.target.innerText; salvarMonstros()"
+                        style="
+                          display:inline-block;
+                          min-width:60px;
+                          padding:2px 4px;
+                          border-radius:3px;
+                          outline:none;
+                        "
+                      >
+                        {{ m.nome }}
+                      </span>
+
+                    </span>
+                    
                     <div class="stat-controls">
                       <button @click="m.vida--; salvarMonstros()">−</button>
-<span class="value">{{ m.vida }}</span>
-<button @click="m.vida++; salvarMonstros()">+</button>
+                      <span class="value">{{ m.vida }}</span>
+                      <button @click="m.vida++; salvarMonstros()">+</button>
 
                     </div>
                   </div>
