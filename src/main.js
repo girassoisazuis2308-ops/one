@@ -20,6 +20,7 @@ const App = {
       rolando: false,
       monstros: [], // 🔥 MONSTROS (MELHORIA)
       _acoes: 3,
+      inventarioExpandido: {},
     };
   },
 
@@ -178,6 +179,13 @@ const App = {
     trocarPagina(p) {
       this.page = p;
     },
+
+    toggleInventario(id) {
+  this.$set
+    ? this.$set(this.inventarioExpandido, id, !this.inventarioExpandido[id])
+    : (this.inventarioExpandido[id] = !this.inventarioExpandido[id]);
+},
+
 
     // 🔥 MELHORIA 2: SALVAR MONSTROS
     async salvarMonstros() {
@@ -459,7 +467,29 @@ const App = {
           </div>
 
           <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
-          <p style="font-size:12px;">{{ ficha.inventario }}</p>
+          <div style="font-size:12px; margin-top:6px;">
+  <button
+    @click="toggleInventario(id)"
+    style="
+      font-size:10px;
+      padding:2px 6px;
+      border:none;
+      background:#444;
+      color:white;
+      border-radius:4px;
+      cursor:pointer;
+      margin-bottom:4px;
+    "
+  >
+    {{ inventarioExpandido[id] ? 'Esconder Inventário' : 'Mostrar Inventário' }}
+  </button>
+
+  <div v-if="inventarioExpandido[id]"
+       style="background:#1a1a1a; padding:6px; border-radius:4px; white-space:pre-wrap; margin-top:4px;">
+    {{ ficha.inventario || '—' }}
+  </div>
+</div>
+
           <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
         </div>
 
