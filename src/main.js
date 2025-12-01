@@ -493,9 +493,10 @@ const App = {
                   <div class="stat-box">
                     <span class="label">Monstro {{ index + 1 }}</span>
                     <div class="stat-controls">
-                      <button @click="m.vida--">−</button>
-                      <span class="value">{{ m.vida }}</span>
-                      <button @click="m.vida++">+</button>
+                      <button @click="m.vida--; salvarMonstros()">−</button>
+<span class="value">{{ m.vida }}</span>
+<button @click="m.vida++; salvarMonstros()">+</button>
+
                     </div>
                   </div>
                 </div>
