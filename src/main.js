@@ -449,7 +449,7 @@ const App = {
       <!-- Mestre -->
       <div v-if="page==='master' && isMestre" class="master">
 
-        <div style="text-align: center; margin-bottom: 10px;">
+        <div style="text-align: center; margin-bottom: 2px; margin-top: 5px">
           <button
             @click="limparFichas"
             style="width: 80px; padding: 4px 8px; background:#b00000; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"
