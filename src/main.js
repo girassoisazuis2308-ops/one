@@ -489,7 +489,7 @@ const App = {
       font-size:10px;
       padding:2px 6px;
       border:none;
-      background:linear-gradient(145deg, #2C2D3F, #252634);
+      background:linear-gradient(145deg, #1A1B2E, #1C1D33);
       color:white;
       border-radius:4px;
       cursor:pointer;
@@ -500,7 +500,7 @@ const App = {
   </button>
 
   <div v-if="inventarioExpandido[id]"
-       style="background:linear-gradient(145deg, #2C2D3F, #252634); padding:6px; border-radius:4px; white-space:pre-wrap; margin-top:4px;">
+       style="background:linear-gradient(145deg, #1A1B2E, #1C1D33); padding:6px; border-radius:4px; white-space:pre-wrap; margin-top:4px;">
     {{ ficha.inventario || '—' }}
   </div>
 </div>
@@ -570,7 +570,7 @@ const App = {
         <!-- Debug -->
         <div
           v-if="page === 'master' && isMestre"
-          style="margin-top:20px; background:#111; padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
+          style="margin-top:20px; background:linear-gradient(145deg, #1A1B2E, #1C1D33); padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
         >
           <h3>Debug:</h3>
           <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
