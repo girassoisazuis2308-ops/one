@@ -21,6 +21,7 @@ const App = {
       monstros: [], 
       _acoes: 3,
       inventarioExpandido: {},
+      salvandoManual: false, // Novo estado para controlar o botão manual
     };
   },
 
@@ -152,11 +153,11 @@ const App = {
       return [];
     },
 
-    // 💡 CORRIGIDO: Aceita 'imediato = false' para permitir salvamento manual no botão ⟳
+    // 💡 REVERTIDO: Função salvarFicha volta a ter delay de 700ms por padrão (debounce)
     async salvarFicha(imediato = false) {
       clearTimeout(this.salvarTimeout);
 
-      const delay = imediato ? 0 : 700; // Se imediato for true, delay é 0
+      const delay = imediato ? 0 : 700; 
 
       this.salvarTimeout = setTimeout(async () => {
         try {
@@ -187,6 +188,22 @@ const App = {
         }
       }, delay);
     },
+    
+    // 🔥 NOVO MÉTODO: Função dedicada para salvamento manual imediato
+    async salvarFichaImediatamente() {
+        if (this.salvandoManual) return; // Garante que a função só é chamada uma vez
+        
+        this.salvandoManual = true;
+        this.log("Forçando salvamento manual...");
+        
+        // Chamada direta para salvarFicha com 'imediato = true'
+        await this.salvarFicha(true); 
+        
+        // Timeout para reativar o botão (se o jogador precisar clicar de novo)
+        setTimeout(() => {
+            this.salvandoManual = false;
+        }, 1000); 
+    },
 
 
     trocarPagina(p) {
@@ -246,14 +263,9 @@ const App = {
       }
     },
 
-    // 💡 Modificado: Chama salvarFicha(true) para forçar o envio da rolagem
+    // 💡 REVERTIDO: Apenas troca a visibilidade
     async toggleUltimasRolagens() {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
-
-      // Força o salvamento imediato da ficha ao abrir o histórico
-      if (this.ultimasRolagensVisiveis) {
-        await this.salvarFicha(true);
-      }
     },
 
     async rolarDado(max, tipo) {
@@ -330,10 +342,31 @@ const App = {
 
             <div v-if="page==='player'" class="sheet">
 
-        <div class="field">
-          <label>Nome</label>
-          <input v-model="nome" placeholder="Digite o nome" />
-          <small style="display:block; margin-top: 4px; opacity: 0.7;">Clique no ⟳ se uma rolagem falhar.</small>
+        <div class="field" style="display: flex; align-items: center; gap: 8px;">
+          <div>
+            <label>Nome</label>
+            <input v-model="nome" placeholder="Digite o nome" />
+          </div>
+
+          <button
+              @click="salvarFichaImediatamente"
+              :disabled="salvandoManual"
+              style="
+                  font-size: 16px;
+                  padding: 4px 8px;
+                  border-radius: 6px;
+                  border: 1px solid #7C5CFF;
+                  background: #1C1D33;
+                  color: white;
+                  cursor: pointer;
+                  height: 30px; /* Alinha verticalmente */
+                  align-self: flex-end; /* Alinha com a parte de baixo do input */
+                  margin-bottom: 2px;
+              "
+              :title="salvandoManual ? 'Salvando...' : 'Forçar Salvamento Manual'"
+          >
+              {{ salvandoManual ? '🔄' : '💾' }}
+          </button>
         </div>
 
         <div class="stats-row">
@@ -420,6 +453,7 @@ const App = {
                 position:relative;
                 z-index:1;
               "
+              title="Ver Últimas Rolagens"
             >
               ⟳
             </button>
