@@ -57,7 +57,7 @@ const App = {
         if (minhaFicha) {
           Object.assign(this, minhaFicha);
           this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
-          this._acoes = minhaFicha._acoes ?? 3; // Corrigido para carregar ações corretamente
+          this._acoes = minhaFicha._acoes ?? 3;
         } else {
           this._acoes = 3;
         }
@@ -152,7 +152,7 @@ const App = {
       return [];
     },
 
-    // 💡 Modificação para aceitar o parâmetro 'imediato'
+    // 💡 CORRIGIDO: Aceita 'imediato = false' para permitir salvamento manual no botão ⟳
     async salvarFicha(imediato = false) {
       clearTimeout(this.salvarTimeout);
 
@@ -246,11 +246,11 @@ const App = {
       }
     },
 
-    // 💡 Modificação para forçar o salvamento imediato da ficha
+    // 💡 Modificado: Chama salvarFicha(true) para forçar o envio da rolagem
     async toggleUltimasRolagens() {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
 
-      // Chama salvarFicha com 'imediato = true'
+      // Força o salvamento imediato da ficha ao abrir o histórico
       if (this.ultimasRolagensVisiveis) {
         await this.salvarFicha(true);
       }
@@ -461,9 +461,10 @@ const App = {
           >
             Limpar
           </button>
+          <small style="display:block; margin-top: 4px; opacity: 0.7;">Limpar todas as fichas dos jogadores.</small>
         </div>
 
-        <div v-if="Object.keys(fichas).length === 0">
+        <div v-if="Object.keys(fichas).length === 0" style="margin-top: 15px; text-align: center; opacity: 0.8;">
           Nenhum jogador conectado ainda.
         </div>
 
@@ -474,7 +475,7 @@ const App = {
 
                         <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
               <button @click="alterarAcoes(id, (ficha._acoes ?? 3) - 1)">−</button>
-
+                <span class="label" style="font-weight: bold;">Ações:</span>
               <span style="display:inline-block;">
                 {{ ficha._acoes ?? 3 }}
               </span>
@@ -508,10 +509,11 @@ const App = {
   </div>
 </div>
 
-          <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+          <p style="font-size: 14px; font-style: italic; opacity: 0.9;">Últimas Rolagens: {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
         </div>
 
-                <div>
+                <h2 style="margin-top: 20px;">Administração de Monstros</h2>
+        <div>
           <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
             <button
               @click="adicionarMonstro"
