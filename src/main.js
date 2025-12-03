@@ -18,11 +18,11 @@ const App = {
       logs: [],
       isMestre: false,
       rolando: false,
-      monstros: [], // 🔥 MONSTROS (MELHORIA)
+      monstros: [],
       _acoes: 3,
       inventarioExpandido: {},
       
-      // 💡 NOVO: Promessa para enfileirar as operações de salvamento (Ainda necessário para evitar sobreposição interna)
+      // 💡 Promessa para enfileirar as operações de salvamento
       salvamentoEmAndamento: Promise.resolve(), 
     };
   },
@@ -41,7 +41,7 @@ const App = {
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
-        // Carregar todas as fichas já existentes
+        // Carregar fichas e monstros (mantido como está)
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
 
@@ -54,7 +54,6 @@ const App = {
 
         this.fichas = fichasAtuais;
 
-        // Carregar minha própria ficha
         const minhaFicha = roomData[`ficha-${playerId}`];
 
         if (minhaFicha) {
@@ -65,8 +64,6 @@ const App = {
           this._acoes = 3;
         }
 
-
-        // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
         if (roomData.monstros) {
           this.monstros = roomData.monstros.split("|").map(entry => {
             const [nome, vida] = entry.split(",");
@@ -77,7 +74,7 @@ const App = {
           });
         }
 
-        // Listeners ao vivo para o Mestre
+        // Listeners ao vivo (mantido como está)
         OBR.room.onMetadataChange((metadata) => {
           const novas = {};
         
@@ -88,7 +85,6 @@ const App = {
             }
           }
         
-          // Mescla sem sobrescrever campos importantes
           for (const [key, ficha] of Object.entries(novas)) {
             if (!this.fichas[key]) {
               this.fichas[key] = {
@@ -111,7 +107,6 @@ const App = {
             }
           }
         
-          // Atualiza monstros
           if (metadata.monstros) {
             this.monstros = metadata.monstros.split("|").map(entry => {
               const [nome, vida] = entry.split(",");
@@ -134,11 +129,11 @@ const App = {
   watch: {
     nome: "salvarFicha",
     vida(value) {
-      if (value < 0) this.vida = 0; // 🔥 MELHORIA 1
+      if (value < 0) this.vida = 0;
       this.salvarFicha();
     },
     ruina(value) {
-      if (value < 0) this.ruina = 0; // 🔥 MELHORIA 1
+      if (value < 0) this.ruina = 0;
       this.salvarFicha();
     },
     tipo: "salvarFicha",
@@ -155,15 +150,14 @@ const App = {
     },
 
     /**
-     * 💡 NOVO/REVISADO: Salva o payload da ficha do jogador, garantindo consistência
-     * lendo e reescrevendo (para mitigar conflitos de escrita rápida).
+     * 💡 MÉTODO DE SALVAMENTO SIMPLIFICADO E ENFILEIRADO
+     * Não faz LER/MESCLAR/ESCREVER, pois isso pode estar causando conflitos no OBR.
      */
-    async _salvarFichaOtimizada(isRolagem) {
+    async _salvarFichaSimples(isRolagem) {
       const playerId = await OBR.player.getId();
       const fichaKey = `ficha-${playerId}`;
 
-      // 1. Constrói o novo payload
-      const novoPayload = {
+      const payload = {
         nome: this.nome,
         vida: this.vida,
         ruina: this.ruina,
@@ -172,48 +166,34 @@ const App = {
         inventario: this.inventario,
         ultimoResultado: this.ultimoResultado,
         ultimasRolagens: this.ultimasRolagens.join("|"),
-        // Ações são salvas somente se for GM ou se já existirem
       };
 
       if (this.isMestre) {
-        novoPayload._acoes = this._acoes;
+        payload._acoes = this._acoes;
       }
 
-      // 2. Lógica da Fila
+      // 1. Enfileiramento (garante que só uma escrita ocorra por vez)
       this.salvamentoEmAndamento = this.salvamentoEmAndamento.then(async () => {
-        
         try {
-          // Se for rolagem, lê os metadados atuais para evitar sobrescrever dados de outros jogadores.
-          if (isRolagem) {
-            const roomData = await OBR.room.getMetadata();
-            const updates = { ...roomData }; // Clona para modificação
-
-            // 3. Mescla os metadados existentes com o novo payload da ficha atual.
-            updates[fichaKey] = {
-              ...updates[fichaKey], // Mantém campos que podem não ter sido alterados
-              ...novoPayload // Aplica as atualizações do jogador
-            };
-            
-            // 4. Escreve a sala inteira (incluindo a ficha atualizada).
-            await OBR.room.setMetadata(updates);
-            
-          } else {
-            // Se não for rolagem, usa a escrita direta (mais rápida).
-            await OBR.room.setMetadata({ [fichaKey]: novoPayload });
-          }
+          
+          // 2. Escrita direta (mais simples)
+          await OBR.room.setMetadata({ [fichaKey]: payload });
 
           this.log(`💾 Ficha salva: ${this.nome} ${isRolagem ? '(Rolagem)' : ''}`);
+
+          // 3. 💡 FORÇAR DELAY APÓS GRAVAÇÃO CRÍTICA
+          if (isRolagem) {
+             await new Promise(r => setTimeout(r, 50)); // 50ms de buffer
+          }
+
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
-          // Lança o erro para que o bloco .catch da promessa possa lidar com ele, se necessário.
-          throw e;
+          throw e; // Lança para que o catch da promessa possa reagir
         }
 
       }).catch((e) => {
-        // Loga falhas anteriores (apenas para debug)
         this.log(`⚠️ Falha na fila anterior: ${e.message}`);
-        // Retorna um Promise.resolve() para permitir que o encadeamento continue na próxima chamada.
-        return Promise.resolve();
+        return Promise.resolve(); // Permite que a fila continue
       });
 
       return this.salvamentoEmAndamento;
@@ -226,8 +206,8 @@ const App = {
     async salvarFicha(debounce = true) {
       if (!debounce) {
         // Ação Crítica (Rolagem): Salva imediatamente e AWAIT (espera) a conclusão.
-        // Passa 'true' para indicar que é uma rolagem e deve usar a lógica de LER-MESCLAR-ESCREVER.
-        await this._salvarFichaOtimizada(true); 
+        // Passa 'true' para indicar que é uma rolagem.
+        await this._salvarFichaSimples(true); 
         return;
       }
 
@@ -235,8 +215,8 @@ const App = {
       clearTimeout(this.salvarTimeout);
 
       this.salvarTimeout = setTimeout(async () => {
-        // Enfileira a operação sem a otimização de Rolagem (escrita direta).
-        this._salvarFichaOtimizada(false); 
+        // Enfileira a operação sem ser marcada como Rolagem.
+        this._salvarFichaSimples(false); 
       }, 700);
     },
 
@@ -251,7 +231,7 @@ const App = {
     },
 
 
-    // 🔥 MELHORIA 2: SALVAR MONSTROS
+    // SALVAR MONSTROS (mantido como está)
     async salvarMonstros() {
       try {
         const compact = this.monstros
@@ -315,7 +295,7 @@ const App = {
 
       this.ultimoResultado = this.ultimasRolagens[0];
 
-      // 💡 SOLUÇÃO FINAL: Chama salvamento imediato e otimizado (Ler-Modificar-Escrever)
+      // 💡 SOLUÇÃO: Chama salvamento imediato e enfileirado com delay forçado.
       await this.salvarFicha(false); 
 
       this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
@@ -340,7 +320,6 @@ const App = {
       const fichaAtual = this.fichas[id];
       if (!fichaAtual) return;
 
-      // 🔥 Cria um clone completo da ficha ANTES do envio
       const fichaParaSalvar = {
         nome: fichaAtual.nome,
         vida: fichaAtual.vida,
@@ -354,12 +333,10 @@ const App = {
       };
 
       try {
-        // O GM não usa a fila do jogador, ele escreve diretamente a ficha do outro.
         await OBR.room.setMetadata({
           [id]: fichaParaSalvar
         });
 
-        // Atualiza localmente sem sobrescrever a ficha inteira
         this.fichas[id]._acoes = novoValor;
 
         this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
