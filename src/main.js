@@ -21,6 +21,9 @@ const App = {
       monstros: [], // 🔥 MONSTROS (MELHORIA)
       _acoes: 3,
       inventarioExpandido: {},
+      
+      // 💡 NOVO: Promessa para enfileirar as operações de salvamento
+      salvamentoEmAndamento: Promise.resolve(), 
     };
   },
 
@@ -152,37 +155,49 @@ const App = {
     },
 
     /**
-     * NOVO MÉTODO PRIVADO: Executa a operação real de setMetadata.
+     * 💡 NOVO: Função que executa a chamada OBR.room.setMetadata.
+     * Separada para ser usada na fila.
      */
-    async _salvarFichaNoRoom() {
+    async _salvarFichaPayload(payload) {
       try {
         const playerId = await OBR.player.getId();
-        
-        // Monta o objeto sem _acoes quando não for Mestre
-        const payload = {
-          nome: this.nome,
-          vida: this.vida,
-          ruina: this.ruina,
-          tipo: this.tipo,
-          atributo: this.atributo,
-          inventario: this.inventario,
-          ultimoResultado: this.ultimoResultado,
-          ultimasRolagens: this.ultimasRolagens.join("|"),
-        };
-
-        // Apenas o Mestre envia/atualiza _acoes
-        if (this.isMestre) {
-          payload._acoes = this._acoes;
-        }
-
         await OBR.room.setMetadata({
           [`ficha-${playerId}`]: payload
         });
-
         this.log("💾 Ficha salva: " + this.nome);
       } catch (e) {
         this.log("❌ Erro ao salvar: " + e.message);
+        throw e; 
       }
+    },
+
+
+    /**
+     * MÉTODO REVISADO: Constrói o payload e ENFILEIRA a operação.
+     * Esta função não executa o salvamento, apenas o agenda.
+     */
+    async _salvarFichaNoRoom() {
+      const payload = {
+        nome: this.nome,
+        vida: this.vida,
+        ruina: this.ruina,
+        tipo: this.tipo,
+        atributo: this.atributo,
+        inventario: this.inventario,
+        ultimoResultado: this.ultimoResultado,
+        ultimasRolagens: this.ultimasRolagens.join("|"),
+      };
+
+      if (this.isMestre) {
+        payload._acoes = this._acoes;
+      }
+      
+      // 💡 IMPLEMENTAÇÃO DA FILA: Encadeia a nova operação à promessa anterior.
+      this.salvamentoEmAndamento = this.salvamentoEmAndamento
+        .then(() => this._salvarFichaPayload(payload))
+        .catch(() => this._salvarFichaPayload(payload)); 
+
+      return this.salvamentoEmAndamento;
     },
 
     /**
@@ -191,8 +206,8 @@ const App = {
      */
     async salvarFicha(debounce = true) {
       if (!debounce) {
-        // Ação Crítica (Rolagem): Salva imediatamente.
-        await this._salvarFichaNoRoom();
+        // Ação Crítica (Rolagem): Salva imediatamente e AWAIT (espera) a conclusão.
+        await this._salvarFichaNoRoom(); 
         return;
       }
 
@@ -200,7 +215,8 @@ const App = {
       clearTimeout(this.salvarTimeout);
 
       this.salvarTimeout = setTimeout(async () => {
-        await this._salvarFichaNoRoom();
+        // Enfileira a operação, mas não espera no setTimeout
+        this._salvarFichaNoRoom(); 
       }, 700);
     },
 
@@ -279,8 +295,8 @@ const App = {
 
       this.ultimoResultado = this.ultimasRolagens[0];
 
-      // 💡 SOLUÇÃO DO BUG: Salva imediatamente (debounce = false)
-      await this.salvarFicha(false);
+      // 💡 SOLUÇÃO: Chama salvamento imediato e enfileirado.
+      await this.salvarFicha(false); 
 
       this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
 
