@@ -11,17 +11,20 @@ const App = {
       atributo: "Força",
       inventario: "",
       ultimoResultado: "",
-      ultimasRolagens: [],
+      ultimasRolagens: [], // Manter localmente para feedback, mas não mais salvar no OBR.
       ultimasRolagensVisiveis: false,
       fichas: {},
       salvarTimeout: null,
-      logs: [], // Logs de debug do sistema
-      historicoRolagens: [], // 🔥 NOVO: Logs visuais de rolagens (Chat)
+      logs: [],
+      historicoRolagens: [], 
       isMestre: false,
       rolando: false,
       monstros: [], 
       _acoes: 3,
       inventarioExpandido: {},
+      
+      // 🔥 NOVO: Modificador de D4 para Vantagem/Desvantagem
+      modificadorD4: "0", // Valores: "-2", "-1", "0", "+1", "+2"
     };
   },
 
@@ -47,7 +50,7 @@ const App = {
         const minhaFicha = roomData[`ficha-${playerId}`];
         if (minhaFicha) {
           Object.assign(this, minhaFicha);
-          this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
+          // ⚠️ Removendo normalizarRolagens pois não vamos mais salvar isso na ficha
           if (this._acoes === undefined) this._acoes = minhaFicha._acoes ?? 3;
         } else {
           this._acoes = 3;
@@ -85,7 +88,12 @@ const App = {
   },
 
   methods: {
-    // 🔥 NOVO MÉTODO CENTRAL PARA PROCESSAR DADOS
+    
+    // 🗑️ normalizarRolagens não é mais necessário, mas vamos manter ele vazio para evitar quebrar o processamento.
+    normalizarRolagens(v) {
+      return [];
+    },
+
     processarMetadados(metadata) {
         const novasFichas = {};
         const novoHistorico = [];
@@ -93,16 +101,15 @@ const App = {
         for (const [key, value] of Object.entries(metadata)) {
             // 1. Processa Fichas
             if (key.startsWith("ficha-")) {
-                value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
                 novasFichas[key] = value;
             }
-            // 2. 🔥 Processa o Chat (Logs de Rolagem)
+            // 2. Processa o Chat (Logs de Rolagem)
             if (key.startsWith("log-")) {
                 novoHistorico.push(value);
             }
         }
 
-        // Atualiza Fichas (Lógica original de merge para manter UI estável)
+        // Atualiza Fichas
         for (const [key, ficha] of Object.entries(novasFichas)) {
             if (!this.fichas[key]) {
                 this.fichas[key] = { ...ficha, _acoes: ficha._acoes ?? 3 };
@@ -116,7 +123,7 @@ const App = {
                     atributo: ficha.atributo ?? existente.atributo,
                     inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
                     ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
-                    ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
+                    // ⚠️ ultimasRolagens não são mais atualizadas aqui
                     _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
                 });
             }
@@ -127,7 +134,7 @@ const App = {
             this.carregarMonstros(metadata.monstros);
         }
 
-        // 🔥 Atualiza o Histórico de Rolagens (Ordenado do mais recente para o antigo)
+        // Atualiza o Histórico de Rolagens (Ordenado)
         novoHistorico.sort((a, b) => b.timestamp - a.timestamp);
         this.historicoRolagens = novoHistorico;
     },
@@ -140,13 +147,6 @@ const App = {
                 vida: Number(vida) || 0,
             };
         });
-    },
-
-    normalizarRolagens(v) {
-      if (!v) return [];
-      if (Array.isArray(v)) return v;
-      if (typeof v === "string") return v.split("|");
-      return [];
     },
 
     async salvarFicha() {
@@ -162,7 +162,9 @@ const App = {
             atributo: this.atributo,
             inventario: this.inventario,
             ultimoResultado: this.ultimoResultado,
-            ultimasRolagens: this.ultimasRolagens.join("|"),
+            // 🗑️ Removendo ultimasRolagens do payload para evitar o bug de serialização
+            // ultimasRolagens: this.ultimasRolagens.join("|"),
+
           };
 
           if (this.isMestre) {
@@ -215,7 +217,6 @@ const App = {
       this.salvarMonstros();
     },
 
-    // 🔥 NOVO: LIMPAR HISTÓRICO
     async limparHistorico() {
         if (!confirm("Limpar histórico de rolagens?")) return;
         const roomData = await OBR.room.getMetadata();
@@ -250,44 +251,75 @@ const App = {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
     },
 
-    async rolarDado(max, tipo) {
+    // 🔥 NOVO: LÓGICA REVISADA DE ROLAR DADO
+    async rolarDado(max, tipo, modificador) {
       if (this.rolando) return;
       this.rolando = true;
 
       new Audio('/roll-of-dice.mp3').play();
       await new Promise(res => setTimeout(res, 1000));
 
-      const valor = Math.floor(Math.random() * max) + 1;
+      // 1. Rolagem Principal (D10 ou D4)
+      const valorDado = Math.floor(Math.random() * max) + 1;
+      let resultadoFinal = valorDado;
+      let detalhes = `${tipo} (${valorDado})`;
+      let detalheSimplificado = `${tipo} → ${valorDado}`;
 
-      // Atualiza localmente para feedback visual rápido
-      this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
+      // 2. Rolagem de Modificação (D4s Adicionais)
+      const numModD4 = parseInt(modificador || "0");
+      let totalD4 = 0;
+      let rolagensD4 = [];
+
+      if (numModD4 !== 0) {
+        const quantidade = Math.abs(numModD4);
+        
+        for (let i = 0; i < quantidade; i++) {
+          const roll = Math.floor(Math.random() * 4) + 1; // Rola D4
+          rolagensD4.push(roll);
+          totalD4 += roll;
+        }
+
+        const sinal = numModD4 > 0 ? "+" : "−";
+        
+        if (numModD4 > 0) {
+          resultadoFinal += totalD4;
+        } else {
+          resultadoFinal -= totalD4;
+        }
+        
+        detalhes += ` ${sinal} ${quantidade}D4 (${rolagensD4.join(", ")})`;
+        detalheSimplificado = `${detalheSimplificado} ${sinal} ${totalD4} (Total D4)`;
+      }
+
+
+      // 3. Atualiza feedback local
+      this.ultimoResultado = resultadoFinal;
+      this.ultimasRolagens.unshift(`${detalhes} = ${resultadoFinal}`);
       if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
-      this.ultimoResultado = this.ultimasRolagens[0];
+      this.salvarFicha(); // Salva último resultado para o painel do jogador
 
-      // Salva a ficha normalmente (com debounce, não tem problema atrasar)
-      this.salvarFicha();
-
-      // 🔥 SOLUÇÃO: Envia um LOG separado, com ID único. 
-      // NUNCA vai colidir com outro jogador.
+      // 4. Envia Log (Chat)
       const logId = `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const logData = {
-          msg: `${tipo} → ${valor}`,
+          msg: `${detalhes} = ${resultadoFinal}`,
           autor: this.nome || "Sem Nome",
           timestamp: Date.now()
       };
       
       await OBR.room.setMetadata({ [logId]: logData });
 
-      this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
+      this.log(`${this.nome} 🎲 ${detalheSimplificado} = ${resultadoFinal}`);
       this.rolando = false;
     },
 
-    rolarD10() {
-      return this.rolarDado(10, "D10");
+    rolarD10_Modificado() {
+      // Chama rolarDado passando o valor do seletor modificadorD4
+      return this.rolarDado(10, "D10", this.modificadorD4);
     },
 
-    rolarD4() {
-      return this.rolarDado(4, "D4");
+    rolarD4_Simples() {
+      // Rola D4 simples, sem modificadores D4 adicionais.
+      return this.rolarDado(4, "D4", "0");
     },
 
     log(msg) {
@@ -307,7 +339,8 @@ const App = {
         atributo: fichaAtual.atributo,
         inventario: fichaAtual.inventario,
         ultimoResultado: fichaAtual.ultimoResultado,
-        ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
+        // 🗑️ Removendo ultimasRolagens da ficha do GM
+        // ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"), 
         _acoes: novoValor,
       };
 
@@ -376,21 +409,33 @@ const App = {
             </select>
           </div>
         </div>
+        
+        <div class="field" style="text-align:center; padding: 0 14px;">
+            <label class="label" style="margin-bottom:6px; display:block;">Vantagem/Desvantagem (D4)</label>
+            <select v-model="modificadorD4" style="width:100%; text-align:center; font-weight:bold; background-color:#333; color:white; border:1px solid #555; padding:5px; border-radius:4px;">
+                <option value="-2">2 Desvantagens (−2D4)</option>
+                <option value="-1">1 Desvantagem (−1D4)</option>
+                <option value="0">Normal (0D4)</option>
+                <option value="+1">1 Vantagem (+1D4)</option>
+                <option value="+2">2 Vantagens (+2D4)</option>
+            </select>
+        </div>
+
 
         <div class="stats-row">
           <div class="stat-box" style="padding: 14px;">
             <button
-              @click="rolarD10"
+              @click="rolarD10_Modificado"
               :disabled="rolando"
               style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
             >
-              Rolar D10
+              Rolar D10 + D4
             </button>
           </div>
 
           <div class="stat-box" style="padding: 14px;">
             <button
-              @click="rolarD4"
+              @click="rolarD4_Simples"
               :disabled="rolando"
               style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
             >
@@ -440,7 +485,7 @@ const App = {
                 white-space:nowrap;
               "
             >
-              <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
+              <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px; white-space: normal;">
                 {{ r }}
               </div>
             </div>
@@ -464,7 +509,7 @@ const App = {
                 <div v-if="historicoRolagens.length === 0" style="color: #666; font-size: 11px; text-align: center; padding: 10px;">
                     Nenhuma rolagem ainda.
                 </div>
-                <div v-for="(log, i) in historicoRolagens" :key="i" style="font-size: 12px; border-bottom: 1px solid #333; padding: 3px 0; color: #eee;">
+                <div v-for="(log, i) in historicoRolagens" :key="i" style="font-size: 12px; border-bottom: 1px solid #333; padding: 3px 0; color: #eee; white-space: normal;">
                     <span style="color: #9B7BFF; font-weight: bold;">{{ log.autor }}:</span>
                     {{ log.msg }}
                 </div>
@@ -524,8 +569,8 @@ const App = {
               {{ ficha.inventario || '—' }}
             </div>
           </div>
-
-          <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+          
+          <p style="opacity:0.6; font-size:11px;">(Rolagens no Histórico)</p>
         </div>
 
         <div>
