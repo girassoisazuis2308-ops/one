@@ -18,10 +18,9 @@ const App = {
       logs: [],
       isMestre: false,
       rolando: false,
-      monstros: [], 
+      monstros: [], // 🔥 MONSTROS (MELHORIA)
       _acoes: 3,
       inventarioExpandido: {},
-      salvandoManual: false, // Novo estado para controlar o botão manual
     };
   },
 
@@ -58,13 +57,13 @@ const App = {
         if (minhaFicha) {
           Object.assign(this, minhaFicha);
           this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
-          this._acoes = minhaFicha._acoes ?? 3;
+          if (this._acoes === undefined) this._acoes = minhaFicha._acoes ?? 3;
         } else {
           this._acoes = 3;
         }
 
 
-        // CARREGAR MONSTROS SALVOS
+        // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
        if (roomData.monstros) {
           this.monstros = roomData.monstros.split("|").map(entry => {
             const [nome, vida] = entry.split(",");
@@ -75,7 +74,7 @@ const App = {
           });
         }
 
-        			// Listeners ao vivo para o Mestre
+              // Listeners ao vivo para o Mestre
       OBR.room.onMetadataChange((metadata) => {
         const novas = {};
       
@@ -121,8 +120,7 @@ const App = {
         }
 
       });
-    			
-    			} catch (e) {
+                } catch (e) {
           this.log("❌ Erro na inicialização: " + (e.message || e));
         }
       });
@@ -133,11 +131,11 @@ const App = {
   watch: {
     nome: "salvarFicha",
     vida(value) {
-      if (value < 0) this.vida = 0; 
+      if (value < 0) this.vida = 0; // 🔥 MELHORIA 1
       this.salvarFicha();
     },
     ruina(value) {
-      if (value < 0) this.ruina = 0; 
+      if (value < 0) this.ruina = 0; // 🔥 MELHORIA 1
       this.salvarFicha();
     },
     tipo: "salvarFicha",
@@ -153,83 +151,40 @@ const App = {
       return [];
     },
 
-    // REVERTIDO: Função de salvamento automática (com debounce de 700ms)
     async salvarFicha() {
-      clearTimeout(this.salvarTimeout);
+  clearTimeout(this.salvarTimeout);
 
-      this.salvarTimeout = setTimeout(async () => {
-        try {
-          const playerId = await OBR.player.getId();
+  this.salvarTimeout = setTimeout(async () => {
+    try {
+      const playerId = await OBR.player.getId();
 
-          const payload = {
-            nome: this.nome,
-            vida: this.vida,
-            ruina: this.ruina,
-            tipo: this.tipo,
-            atributo: this.atributo,
-            inventario: this.inventario,
-            ultimoResultado: this.ultimoResultado,
-            ultimasRolagens: this.ultimasRolagens.join("|"),
-          };
+      // Monta o objeto sem _acoes quando não for Mestre
+      const payload = {
+        nome: this.nome,
+        vida: this.vida,
+        ruina: this.ruina,
+        tipo: this.tipo,
+        atributo: this.atributo,
+        inventario: this.inventario,
+        ultimoResultado: this.ultimoResultado,
+        ultimasRolagens: this.ultimasRolagens.join("|"),
+      };
 
-          if (this.isMestre) {
-            payload._acoes = this._acoes;
-          }
+      // Apenas o Mestre envia/atualiza _acoes
+      if (this.isMestre) {
+        payload._acoes = this._acoes;
+      }
 
-          await OBR.room.setMetadata({
-            [`ficha-${playerId}`]: payload
-          });
+      await OBR.room.setMetadata({
+        [`ficha-${playerId}`]: payload
+      });
 
-          this.log("💾 Ficha salva: " + this.nome);
-        } catch (e) {
-          this.log("❌ Erro ao salvar: " + e.message);
-        }
-      }, 700);
-    },
-    
-    // NOVO MÉTODO: Função dedicada para salvamento manual imediato (sem debounce)
-    async salvarFichaImediatamente() {
-        if (this.salvandoManual) return; // Impede cliques múltiplos
-        
-        this.salvandoManual = true;
-        this.log("Forçando salvamento manual (IMEDIATO)...");
-        
-        // 1. Limpa qualquer salvamento agendado
-        clearTimeout(this.salvarTimeout);
-
-        try {
-            const playerId = await OBR.player.getId();
-            
-            const payload = {
-                nome: this.nome,
-                vida: this.vida,
-                ruina: this.ruina,
-                tipo: this.tipo,
-                atributo: this.atributo,
-                inventario: this.inventario,
-                ultimoResultado: this.ultimoResultado,
-                ultimasRolagens: this.ultimasRolagens.join("|"),
-            };
-
-            if (this.isMestre) {
-                payload._acoes = this._acoes;
-            }
-
-            // 2. Executa o salvamento imediatamente
-            await OBR.room.setMetadata({
-                [`ficha-${playerId}`]: payload
-            });
-
-            this.log("✅ Salvamento manual concluído.");
-        } catch (e) {
-            this.log("❌ Erro no salvamento manual: " + e.message);
-        } finally {
-            // Reativa o botão após 1 segundo
-            setTimeout(() => {
-                this.salvandoManual = false;
-            }, 1000); 
-        }
-    },
+      this.log("💾 Ficha salva: " + this.nome);
+    } catch (e) {
+      this.log("❌ Erro ao salvar: " + e.message);
+    }
+  }, 700);
+},
 
 
     trocarPagina(p) {
@@ -237,26 +192,26 @@ const App = {
     },
 
     toggleInventario(id) {
-      this.$set
-        ? this.$set(this.inventarioExpandido, id, !this.inventarioExpandido[id])
-        : (this.inventarioExpandido[id] = !this.inventarioExpandido[id]);
-    },
+  this.$set
+    ? this.$set(this.inventarioExpandido, id, !this.inventarioExpandido[id])
+    : (this.inventarioExpandido[id] = !this.inventarioExpandido[id]);
+},
 
 
-    // SALVAR MONSTROS
+    // 🔥 MELHORIA 2: SALVAR MONSTROS
     async salvarMonstros() {
-      try {
-        const compact = this.monstros
-          .map(m => `${m.nome || ''},${m.vida}`)
-          .join("|");
+  try {
+    const compact = this.monstros
+      .map(m => `${m.nome || ''},${m.vida}`)
+      .join("|");
 
-        await OBR.room.setMetadata({
-          monstros: compact,
-        });
-      } catch (e) {
-        this.log("❌ Erro ao salvar monstros: " + e.message);
-      }
-    },
+    await OBR.room.setMetadata({
+      monstros: compact,
+    });
+  } catch (e) {
+    this.log("❌ Erro ao salvar monstros: " + e.message);
+  }
+},
 
     adicionarMonstro() {
       this.monstros.push({ vida: 10 });
@@ -289,8 +244,7 @@ const App = {
       }
     },
 
-    // Apenas troca a visibilidade
-    async toggleUltimasRolagens() {
+    toggleUltimasRolagens() {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
     },
 
@@ -328,33 +282,35 @@ const App = {
     },
 
     async alterarAcoes(id, novoValor) {
-      const fichaAtual = this.fichas[id];
-      if (!fichaAtual) return;
+  const fichaAtual = this.fichas[id];
+  if (!fichaAtual) return;
 
-      const fichaParaSalvar = {
-        nome: fichaAtual.nome,
-        vida: fichaAtual.vida,
-        ruina: fichaAtual.ruina,
-        tipo: fichaAtual.tipo,
-        atributo: fichaAtual.atributo,
-        inventario: fichaAtual.inventario,
-        ultimoResultado: fichaAtual.ultimoResultado,
-        ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
-        _acoes: novoValor,
-      };
+  // 🔥 Cria um clone completo da ficha ANTES do envio
+  const fichaParaSalvar = {
+    nome: fichaAtual.nome,
+    vida: fichaAtual.vida,
+    ruina: fichaAtual.ruina,
+    tipo: fichaAtual.tipo,
+    atributo: fichaAtual.atributo,
+    inventario: fichaAtual.inventario,
+    ultimoResultado: fichaAtual.ultimoResultado,
+    ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
+    _acoes: novoValor,
+  };
 
-      try {
-        await OBR.room.setMetadata({
-          [id]: fichaParaSalvar
-        });
+  try {
+    await OBR.room.setMetadata({
+      [id]: fichaParaSalvar
+    });
 
-        this.fichas[id]._acoes = novoValor;
+    // Atualiza localmente sem sobrescrever a ficha inteira
+    this.fichas[id]._acoes = novoValor;
 
-        this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
-      } catch (e) {
-        this.log("❌ Erro ao alterar ações: " + e.message);
-      }
-    }
+    this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
+  } catch (e) {
+    this.log("❌ Erro ao alterar ações: " + e.message);
+  }
+}
 
 
   },
@@ -366,33 +322,12 @@ const App = {
         <button v-if="isMestre" :class="{active: page==='master'}" @click="trocarPagina('master')">Mestre</button>
       </nav>
 
-            <div v-if="page==='player'" class="sheet">
+      <!-- Player -->
+      <div v-if="page==='player'" class="sheet">
 
-        <div class="field" style="display: flex; align-items: center; gap: 8px;">
-          <div>
-            <label>Nome</label>
-            <input v-model="nome" placeholder="Digite o nome" />
-          </div>
-
-          <button
-              @click="salvarFichaImediatamente"
-              :disabled="salvandoManual"
-              style="
-                  font-size: 16px;
-                  padding: 4px 8px;
-                  border-radius: 6px;
-                  border: 1px solid #7C5CFF;
-                  background: #1C1D33;
-                  color: white;
-                  cursor: pointer;
-                  height: 30px; /* Alinha verticalmente */
-                  align-self: flex-end; /* Alinha com a parte de baixo do input */
-                  margin-bottom: 2px;
-              "
-              :title="salvandoManual ? 'Salvando...' : 'Forçar Salvamento Manual'"
-          >
-              {{ salvandoManual ? '🔄' : '💾' }}
-          </button>
+        <div class="field">
+          <label>Nome</label>
+          <input v-model="nome" placeholder="Digite o nome" />
         </div>
 
         <div class="stats-row">
@@ -479,7 +414,6 @@ const App = {
                 position:relative;
                 z-index:1;
               "
-              title="Ver Últimas Rolagens"
             >
               ⟳
             </button>
@@ -512,7 +446,8 @@ const App = {
         </div>
       </div>
 
-            <div v-if="page==='master' && isMestre" class="master">
+      <!-- Mestre -->
+      <div v-if="page==='master' && isMestre" class="master">
 
         <div style="text-align: center; margin-bottom: 2px; margin-top: 5px">
           <button
@@ -521,21 +456,22 @@ const App = {
           >
             Limpar
           </button>
-          <small style="display:block; margin-top: 4px; opacity: 0.7;">Limpar todas as fichas dos jogadores.</small>
         </div>
 
-        <div v-if="Object.keys(fichas).length === 0" style="margin-top: 15px; text-align: center; opacity: 0.8;">
+        <div v-if="Object.keys(fichas).length === 0">
           Nenhum jogador conectado ainda.
         </div>
 
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
           <div style="display:flex; justify-content:space-between; align-items:center;">
 
-                        <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
+            <!-- Nome -->
+            <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
 
-                        <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
+            <!-- CONTADOR BONITO IGUAL VIDA -->
+            <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
               <button @click="alterarAcoes(id, (ficha._acoes ?? 3) - 1)">−</button>
-                <span class="label" style="font-weight: bold;">Ações:</span>
+
               <span style="display:inline-block;">
                 {{ ficha._acoes ?? 3 }}
               </span>
@@ -569,10 +505,10 @@ const App = {
   </div>
 </div>
 
-          <p style="font-size: 14px; font-style: italic; opacity: 0.9;">Últimas Rolagens: {{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+          <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
         </div>
 
-                <h2 style="margin-top: 20px;">Administração de Monstros</h2>
+        <!-- MONSTROS — ADMINISTRAÇÃO DO MESTRE -->
         <div>
           <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
             <button
@@ -594,7 +530,8 @@ const App = {
             Nenhum monstro criado.
           </div>
 
-                    <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
+          <!-- grade de 2 por linha -->
+          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
             <div v-for="(m, index) in monstros" :key="index">
               <div style="padding:6px; padding-top:0;">
                 <div class="stats-row" style="margin:0;">
@@ -622,14 +559,16 @@ const App = {
                       <button @click="m.vida++; salvarMonstros()">+</button>
 
                     </div>
+                  </div>
                 </div>
-                </div>
+              </div>
             </div>
           </div>
 
         </div>
 
-                <div
+        <!-- Debug -->
+        <div
           v-if="page === 'master' && isMestre"
           style="margin-top:20px; background:linear-gradient(145deg, #1A1B2E, #1C1D33); padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
         >
