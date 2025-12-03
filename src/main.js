@@ -3,145 +3,115 @@ import OBR from "@owlbear-rodeo/sdk";
 const App = {
   data() {
     return {
+      // --- Navegação e Estado Local ---
       page: "player",
+      logs: [],
+      isMestre: false,
+      rolando: false,
+      ultimasRolagensVisiveis: false,
+      inventarioExpandido: {},
+      
+      // --- Dados da Ficha (Persistentes) ---
       nome: "",
       vida: 3,
       ruina: 3,
       tipo: "Combatente",
       atributo: "Força",
       inventario: "",
+      
+      // --- Dados de Rolagem (Voláteis) ---
       ultimoResultado: "",
       ultimasRolagens: [],
-      ultimasRolagensVisiveis: false,
-      fichas: {},
-      salvarTimeout: null,
-      logs: [],
-      isMestre: false,
-      rolando: false,
-      monstros: [],
-      _acoes: 3,
-      inventarioExpandido: {},
       
-      // 💡 Promessa para enfileirar as operações de salvamento
-      salvamentoEmAndamento: Promise.resolve(), 
+      // --- Dados Globais (Sala) ---
+      fichas: {},
+      monstros: [],
+      _acoes: 3, // Controle local de ações (Mestre)
+      
+      // --- Controle Interno ---
+      salvarStatusTimeout: null, // Timer exclusivo para status
     };
   },
 
   mounted() {
-    this.log("⏳ Aguardando OBR...");
+    this.log("⏳ Iniciando extensão...");
 
     OBR.onReady(async () => {
-      this.log("✅ OBR carregado!");
+      this.log("✅ OBR Conectado!");
 
       try {
         const playerId = await OBR.player.getId();
-        this.log("🎮 Meu ID: " + playerId);
-
         const role = await OBR.player.getRole();
         this.isMestre = role === "GM";
-        this.log("🎩 Papel detectado: " + role);
+        this.log(`🆔 ID: ${playerId} | 🎭 Role: ${role}`);
 
-        // Carregar fichas e monstros (mantido como está)
-        const roomData = await OBR.room.getMetadata();
-        const fichasAtuais = {};
+        // 1. Carga Inicial
+        const metadata = await OBR.room.getMetadata();
+        this.sincronizarSala(metadata);
 
-        for (const [key, value] of Object.entries(roomData)) {
-          if (key.startsWith("ficha-")) {
-            value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-            fichasAtuais[key] = value;
-          }
+        // 2. Carregar meu próprio estado se existir
+        const minhaKey = `ficha-${playerId}`;
+        if (metadata[minhaKey]) {
+          const dados = metadata[minhaKey];
+          this.nome = dados.nome || "";
+          this.vida = dados.vida || 3;
+          this.ruina = dados.ruina || 3;
+          this.tipo = dados.tipo || "Combatente";
+          this.atributo = dados.atributo || "Força";
+          this.inventario = dados.inventario || "";
+          this.ultimoResultado = dados.ultimoResultado || "";
+          this.ultimasRolagens = this.normalizarRolagens(dados.ultimasRolagens);
+          // Se eu for mestre, carrego minhas ações, senão default 3
+          this._acoes = dados._acoes ?? 3;
         }
 
-        this.fichas = fichasAtuais;
-
-        const minhaFicha = roomData[`ficha-${playerId}`];
-
-        if (minhaFicha) {
-          Object.assign(this, minhaFicha);
-          this.ultimasRolagens = this.normalizarRolagens(minhaFicha.ultimasRolagens);
-          if (this._acoes === undefined) this._acoes = minhaFicha._acoes ?? 3;
-        } else {
-          this._acoes = 3;
-        }
-
-        if (roomData.monstros) {
-          this.monstros = roomData.monstros.split("|").map(entry => {
-            const [nome, vida] = entry.split(",");
-            return {
-              nome: nome || "Monstro",
-              vida: Number(vida) || 0,
-            };
-          });
-        }
-
-        // Listeners ao vivo (mantido como está)
-        OBR.room.onMetadataChange((metadata) => {
-          const novas = {};
-        
-          for (const [key, value] of Object.entries(metadata)) {
-            if (key.startsWith("ficha-")) {
-              value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
-              novas[key] = value;
-            }
-          }
-        
-          for (const [key, ficha] of Object.entries(novas)) {
-            if (!this.fichas[key]) {
-              this.fichas[key] = {
-                ...ficha,
-                _acoes: ficha._acoes ?? 3
-              };
-            } else {
-              const existente = this.fichas[key];
-              Object.assign(existente, {
-                nome: ficha.nome ?? existente.nome,
-                vida: ficha.vida ?? existente.vida,
-                ruina: ficha.ruina ?? existente.ruina,
-                tipo: ficha.tipo ?? existente.tipo,
-                atributo: ficha.atributo ?? existente.atributo,
-                inventario: ficha.inventario !== undefined ? ficha.inventario : existente.inventario,
-                ultimoResultado: ficha.ultimoResultado !== undefined ? ficha.ultimoResultado : existente.ultimoResultado,
-                ultimasRolagens: ficha.ultimasRolagens ?? existente.ultimasRolagens,
-                _acoes: ficha._acoes !== undefined ? ficha._acoes : (existente._acoes ?? 3)
-              });
-            }
-          }
-        
-          if (metadata.monstros) {
-            this.monstros = metadata.monstros.split("|").map(entry => {
-              const [nome, vida] = entry.split(",");
-              return {
-                nome: nome || "Monstro",
-                vida: Number(vida) || 0,
-              };
-            });
-          }
-
+        // 3. Listener em Tempo Real (O Coração da Sincronização)
+        OBR.room.onMetadataChange((novosDados) => {
+          this.sincronizarSala(novosDados);
         });
+
       } catch (e) {
-        this.log("❌ Erro na inicialização: " + (e.message || e));
+        this.log("❌ Erro Fatal: " + e.message);
       }
     });
-
-
   },
 
   watch: {
-    nome: "salvarFicha",
-    vida(value) {
-      if (value < 0) this.vida = 0;
-      this.salvarFicha();
-    },
-    ruina(value) {
-      if (value < 0) this.ruina = 0;
-      this.salvarFicha();
-    },
-    tipo: "salvarFicha",
-    atributo: "salvarFicha",
-    inventario: "salvarFicha",
+    // Observadores APENAS para status (com debounce)
+    nome: "agendarSalvamentoStatus",
+    vida(val) { if (val < 0) this.vida = 0; this.agendarSalvamentoStatus(); },
+    ruina(val) { if (val < 0) this.ruina = 0; this.agendarSalvamentoStatus(); },
+    tipo: "agendarSalvamentoStatus",
+    atributo: "agendarSalvamentoStatus",
+    inventario: "agendarSalvamentoStatus",
   },
 
   methods: {
+    // --- Lógica de Sincronização (Receber Dados) ---
+    sincronizarSala(metadata) {
+      const fichasTemp = {};
+      
+      // Processar Fichas
+      for (const [key, value] of Object.entries(metadata)) {
+        if (key.startsWith("ficha-")) {
+          // Normaliza arrays para evitar erros de renderização
+          value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
+          fichasTemp[key] = value;
+        }
+      }
+      // Atualiza a lista de fichas do Mestre/Jogadores
+      // Usamos uma nova referência para garantir reatividade do Vue
+      this.fichas = fichasTemp;
+
+      // Processar Monstros
+      if (metadata.monstros) {
+        this.monstros = metadata.monstros.split("|").map(entry => {
+          const [n, v] = entry.split(",");
+          return { nome: n || "Monstro", vida: Number(v) || 0 };
+        });
+      }
+    },
+
     normalizarRolagens(v) {
       if (!v) return [];
       if (Array.isArray(v)) return v;
@@ -149,203 +119,168 @@ const App = {
       return [];
     },
 
-    /**
-     * 💡 MÉTODO DE SALVAMENTO SIMPLIFICADO E ENFILEIRADO
-     * Não faz LER/MESCLAR/ESCREVER, pois isso pode estar causando conflitos no OBR.
-     */
-    async _salvarFichaSimples(isRolagem) {
-      const playerId = await OBR.player.getId();
-      const fichaKey = `ficha-${playerId}`;
+    // --- SALVAMENTO TIPO A: Status (Vida, Nome, etc) ---
+    // Usa Debounce para não floodar a API enquanto digita
+    agendarSalvamentoStatus() {
+      clearTimeout(this.salvarStatusTimeout);
+      this.salvarStatusTimeout = setTimeout(() => {
+        this.enviarDadosParaOBR(false); // false = não é rolagem
+      }, 600);
+    },
 
-      const payload = {
-        nome: this.nome,
-        vida: this.vida,
-        ruina: this.ruina,
-        tipo: this.tipo,
-        atributo: this.atributo,
-        inventario: this.inventario,
-        ultimoResultado: this.ultimoResultado,
-        ultimasRolagens: this.ultimasRolagens.join("|"),
-      };
+    // --- SALVAMENTO TIPO B: Rolagem (Dados) ---
+    // Imediato, Forçado e Sem Debounce
+    async salvarRolagemImediata() {
+      await this.enviarDadosParaOBR(true); // true = é rolagem
+    },
 
-      if (this.isMestre) {
-        payload._acoes = this._acoes;
-      }
+    // --- O NÚCLEO DE ENVIO ---
+    async enviarDadosParaOBR(isRolagem) {
+      try {
+        const playerId = await OBR.player.getId();
+        
+        // Monta o pacote de dados
+        const payload = {
+          nome: this.nome,
+          vida: this.vida,
+          ruina: this.ruina,
+          tipo: this.tipo,
+          atributo: this.atributo,
+          inventario: this.inventario,
+          ultimoResultado: this.ultimoResultado,
+          ultimasRolagens: this.ultimasRolagens.join("|"),
+          // TRUQUE AGRESSIVO: Adiciona um ID aleatório para forçar o OBR 
+          // a detectar mudança mesmo se os dados forem iguais.
+          _updateId: Math.random().toString(36).substring(7) 
+        };
 
-      // 1. Enfileiramento (garante que só uma escrita ocorra por vez)
-      this.salvamentoEmAndamento = this.salvamentoEmAndamento.then(async () => {
-        try {
-          
-          // 2. Escrita direta (mais simples)
-          await OBR.room.setMetadata({ [fichaKey]: payload });
-
-          this.log(`💾 Ficha salva: ${this.nome} ${isRolagem ? '(Rolagem)' : ''}`);
-
-          // 3. 💡 FORÇAR DELAY APÓS GRAVAÇÃO CRÍTICA
-          if (isRolagem) {
-             await new Promise(r => setTimeout(r, 50)); // 50ms de buffer
-          }
-
-        } catch (e) {
-          this.log("❌ Erro ao salvar: " + e.message);
-          throw e; // Lança para que o catch da promessa possa reagir
+        // Se for GM, anexa as ações
+        if (this.isMestre) {
+          payload._acoes = this._acoes;
         }
 
-      }).catch((e) => {
-        this.log(`⚠️ Falha na fila anterior: ${e.message}`);
-        return Promise.resolve(); // Permite que a fila continue
-      });
-
-      return this.salvamentoEmAndamento;
-    },
-
-    /**
-     * MÉTODO PÚBLICO: Gerencia o salvamento com debounce (padrão) ou imediato.
-     * @param {boolean} debounce - Se deve aguardar 700ms (true) ou salvar imediatamente (false).
-     */
-    async salvarFicha(debounce = true) {
-      if (!debounce) {
-        // Ação Crítica (Rolagem): Salva imediatamente e AWAIT (espera) a conclusão.
-        // Passa 'true' para indicar que é uma rolagem.
-        await this._salvarFichaSimples(true); 
-        return;
-      }
-
-      // Ações não-críticas (watchers): Aplica debounce.
-      clearTimeout(this.salvarTimeout);
-
-      this.salvarTimeout = setTimeout(async () => {
-        // Enfileira a operação sem ser marcada como Rolagem.
-        this._salvarFichaSimples(false); 
-      }, 700);
-    },
-
-    trocarPagina(p) {
-      this.page = p;
-    },
-
-    toggleInventario(id) {
-      this.$set
-        ? this.$set(this.inventarioExpandido, id, !this.inventarioExpandido[id])
-        : (this.inventarioExpandido[id] = !this.inventarioExpandido[id]);
-    },
-
-
-    // SALVAR MONSTROS (mantido como está)
-    async salvarMonstros() {
-      try {
-        const compact = this.monstros
-          .map(m => `${m.nome || ''},${m.vida}`)
-          .join("|");
-
+        // Envia para a sala
+        // Nota: setMetadata faz merge no nível da raiz, então atualizar 
+        // `ficha-XYZ` não apaga `ficha-ABC`.
         await OBR.room.setMetadata({
-          monstros: compact,
+          [`ficha-${playerId}`]: payload
         });
+
+        if (isRolagem) this.log("🎲 Rolagem enviada com sucesso!");
+        else this.log("💾 Status salvo.");
+
       } catch (e) {
-        this.log("❌ Erro ao salvar monstros: " + e.message);
+        this.log("❌ Erro ao enviar: " + e.message);
       }
     },
 
-    adicionarMonstro() {
-      this.monstros.push({ vida: 10 });
-      this.salvarMonstros();
-    },
-
-    limparMonstros() {
-      if (!confirm("Deseja remover todos os monstros?")) return;
-      this.monstros = [];
-      this.salvarMonstros();
-    },
-
-    async limparFichas() {
-      if (!this.isMestre) return;
-      if (!confirm("Tem certeza que deseja limpar todas as fichas dos jogadores?")) return;
-
-      try {
-        const roomData = await OBR.room.getMetadata();
-        const updates = {};
-
-        for (const key of Object.keys(roomData)) {
-          if (key.startsWith("ficha-")) updates[key] = undefined;
-        }
-
-        await OBR.room.setMetadata(updates);
-        this.fichas = {};
-        this.log("🧹 Todas as fichas foram limpas!");
-      } catch (e) {
-        this.log("❌ Erro ao limpar fichas: " + (e.message || e));
-      }
-    },
-
-    toggleUltimasRolagens() {
-      this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
-    },
-
+    // --- Ações de Jogador ---
     async rolarDado(max, tipo) {
       if (this.rolando) return;
       this.rolando = true;
 
-      new Audio('/roll-of-dice.mp3').play();
-      await new Promise(res => setTimeout(res, 1000));
+      // Efeito sonoro e visual
+      new Audio('/roll-of-dice.mp3').play().catch(() => {}); // catch para evitar erros de autoplay
+      await new Promise(r => setTimeout(r, 800));
 
+      // Lógica do Dado
       const valor = Math.floor(Math.random() * max) + 1;
+      const resultadoStr = `${tipo} → ${valor}`;
 
-      this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
+      // Atualiza Estado Local
+      this.ultimasRolagens.unshift(resultadoStr);
       if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
-
       this.ultimoResultado = this.ultimasRolagens[0];
 
-      // 💡 SOLUÇÃO: Chama salvamento imediato e enfileirado com delay forçado.
-      await this.salvarFicha(false); 
+      // 🔥 ENVIO AGRESSIVO: Chama o salvamento imediato
+      await this.salvarRolagemImediata();
 
-      this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
-
+      this.log(`${this.nome || 'Jogador'} rolou ${valor}`);
       this.rolando = false;
     },
 
-    rolarD10() {
-      return this.rolarDado(10, "D10");
+    rolarD10() { return this.rolarDado(10, "D10"); },
+    rolarD4() { return this.rolarDado(4, "D4"); },
+    
+    toggleUltimasRolagens() {
+      this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
     },
 
-    rolarD4() {
-      return this.rolarDado(4, "D4");
+    // --- Ações de Mestre ---
+    async alterarAcoes(idFicha, novoValor) {
+      // O GM edita diretamente a ficha do jogador no metadado
+      try {
+        // Pega a ficha atual para não perder dados
+        const fichaAtual = this.fichas[idFicha];
+        if (!fichaAtual) return;
+
+        // Clona e atualiza apenas as ações
+        const updatePayload = {
+          ...fichaAtual, // Mantém tudo que o jogador salvou
+          _acoes: novoValor,
+          _updateId: Math.random().toString(36).substring(7) // Força update
+        };
+        
+        // Array de rolagens precisa virar string para salvar
+        if (Array.isArray(updatePayload.ultimasRolagens)) {
+            updatePayload.ultimasRolagens = updatePayload.ultimasRolagens.join("|");
+        }
+
+        await OBR.room.setMetadata({ [idFicha]: updatePayload });
+        this.log(`🔧 Ações de ${fichaAtual.nome} alteradas para ${novoValor}`);
+      } catch (e) {
+        this.log("❌ Erro GM: " + e.message);
+      }
+    },
+
+    async salvarMonstros() {
+      try {
+        const compact = this.monstros.map(m => `${m.nome || ''},${m.vida}`).join("|");
+        await OBR.room.setMetadata({ monstros: compact });
+      } catch (e) { this.log("❌ Erro Monstros: " + e.message); }
+    },
+
+    adicionarMonstro() { this.monstros.push({ vida: 10 }); this.salvarMonstros(); },
+    
+    limparMonstros() {
+      if (confirm("Remover monstros?")) {
+        this.monstros = [];
+        this.salvarMonstros();
+      }
+    },
+
+    async limparFichas() {
+      if (!this.isMestre || !confirm("Limpar TODAS as fichas?")) return;
+      try {
+        const roomData = await OBR.room.getMetadata();
+        const deletar = {};
+        for (const key in roomData) {
+          if (key.startsWith("ficha-")) deletar[key] = undefined; // undefined deleta a chave
+        }
+        await OBR.room.setMetadata(deletar);
+        this.fichas = {};
+        this.log("🧹 Sala limpa.");
+      } catch (e) { this.log("❌ Erro Limpeza: " + e.message); }
+    },
+
+    // --- Utilitários ---
+    trocarPagina(p) { this.page = p; },
+    
+    toggleInventario(id) {
+      // Compatibilidade Vue 2/3
+      if (this.inventarioExpandido[id]) delete this.inventarioExpandido[id];
+      else this.inventarioExpandido[id] = true;
+      // Força reatividade se necessário (depende da versão do Vue no OBR, mas o assign acima costuma bastar)
+      this.inventarioExpandido = { ...this.inventarioExpandido };
     },
 
     log(msg) {
-      this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
+      console.log("[Ficha] " + msg);
+      this.logs.unshift(new Date().toLocaleTimeString().slice(0,5) + " " + msg);
       if (this.logs.length > 20) this.logs.pop();
-    },
-
-    async alterarAcoes(id, novoValor) {
-      const fichaAtual = this.fichas[id];
-      if (!fichaAtual) return;
-
-      const fichaParaSalvar = {
-        nome: fichaAtual.nome,
-        vida: fichaAtual.vida,
-        ruina: fichaAtual.ruina,
-        tipo: fichaAtual.tipo,
-        atributo: fichaAtual.atributo,
-        inventario: fichaAtual.inventario,
-        ultimoResultado: fichaAtual.ultimoResultado,
-        ultimasRolagens: (fichaAtual.ultimasRolagens || []).join("|"),
-        _acoes: novoValor,
-      };
-
-      try {
-        await OBR.room.setMetadata({
-          [id]: fichaParaSalvar
-        });
-
-        this.fichas[id]._acoes = novoValor;
-
-        this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
-      } catch (e) {
-        this.log("❌ Erro ao alterar ações: " + e.message);
-      }
     }
   },
-  
+
   template: `
     <div>
       <nav>
@@ -354,10 +289,9 @@ const App = {
       </nav>
 
       <div v-if="page==='player'" class="sheet">
-
         <div class="field">
           <label>Nome</label>
-          <input v-model="nome" placeholder="Digite o nome" />
+          <input v-model="nome" placeholder="Seu nome" />
         </div>
 
         <div class="stats-row">
@@ -369,7 +303,6 @@ const App = {
               <button @click="vida++">+</button>
             </div>
           </div>
-
           <div class="stat-box">
             <span class="label">Ruina</span>
             <div class="stat-controls">
@@ -384,224 +317,139 @@ const App = {
           <div class="stat-box" style="text-align:center;">
             <label class="label" style="margin-bottom:6px; display:block;">Função</label>
             <select v-model="tipo" style="width:100%;text-align:center;">
-              <option>Combatente</option>
-              <option>Arruinado</option>
+              <option>Combatente</option><option>Arruinado</option>
             </select>
           </div>
-
           <div class="stat-box" style="text-align:center;">
             <label class="label" style="margin-bottom:6px; display:block;">Atributo</label>
             <select v-model="atributo" style="width:100%; text-align:center;">
-              <option>Força</option>
-              <option>Destreza</option>
-              <option>Intelecto</option>
-              <option>Vigor</option>
+              <option>Força</option><option>Destreza</option><option>Intelecto</option><option>Vigor</option>
             </select>
           </div>
         </div>
 
         <div class="stats-row">
           <div class="stat-box" style="padding: 14px;">
-            <button
-              @click="rolarD10"
-              :disabled="rolando"
-              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
-            >
-              Rolar D10
-            </button>
+            <button @click="rolarD10" :disabled="rolando" class="btn-roll">Rolar D10</button>
           </div>
-
           <div class="stat-box" style="padding: 14px;">
-            <button
-              @click="rolarD4"
-              :disabled="rolando"
-              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
-            >
-              Rolar D4
-            </button>
+            <button @click="rolarD4" :disabled="rolando" class="btn-roll">Rolar D4</button>
           </div>
         </div>
 
-        <div class="field" v-if="ultimoResultado !== null" style="position:relative; display:flex; flex-direction:column; align-items:flex-start;">
-          <div style="display:flex; align-items:center; gap:6px; width:100%; position:relative;">
+        <div class="field" v-if="ultimoResultado" style="position:relative; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; gap:6px; width:100%;">
             <label>Resultado</label>
-
-            <div style="font-size:22px; font-weight:bold; flex-shrink:0;">
-              {{ ultimoResultado }}
-            </div>
-
-            <button
-              @click="toggleUltimasRolagens"
-              style="
-                margin-left:auto;
-                font-size:12px;
-                padding:2px 4px;
-                border-radius:4px;
-                border:none;
-                cursor:pointer;
-                background:#7C5CFF;
-                color:white;
-                position:relative;
-                z-index:1;
-              "
-            >
-              ⟳
-            </button>
-
-            <div v-if="ultimasRolagensVisiveis"
-              style="
-                position:absolute;
-                bottom: 30px;
-                right: 0;
-                background:#222;
-                color:white;
-                border:1px solid #444;
-                border-radius:6px;
-                padding:6px 10px;
-                box-shadow:0 2px 6px rgba(0,0,0,0.5);
-                z-index:100;
-                white-space:nowrap;
-              "
-            >
-              <div v-for="(r, i) in ultimasRolagens" :key="i" style="font-size:14px;">
-                {{ r }}
-              </div>
+            <div style="font-size:22px; font-weight:bold;">{{ ultimoResultado }}</div>
+            <button @click="toggleUltimasRolagens" class="btn-mini" style="margin-left:auto;">⟳</button>
+            
+            <div v-if="ultimasRolagensVisiveis" class="dropdown-results">
+              <div v-for="(r, i) in ultimasRolagens" :key="i">{{ r }}</div>
             </div>
           </div>
         </div>
 
         <div class="field">
           <label>Inventário</label>
-          <textarea v-model="inventario" rows="5" placeholder="Anote itens"></textarea>
+          <textarea v-model="inventario" rows="5" placeholder="Itens..."></textarea>
         </div>
       </div>
 
       <div v-if="page==='master' && isMestre" class="master">
-
-        <div style="text-align: center; margin-bottom: 2px; margin-top: 5px">
-          <button
-            @click="limparFichas"
-            style="width: 80px; padding: 4px 8px; background:#b00000; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4);"
-          >
-            Limpar
-          </button>
+        <div style="text-align: center; margin: 5px 0;">
+          <button @click="limparFichas" class="btn-danger">Limpar Fichas</button>
         </div>
 
-        <div v-if="Object.keys(fichas).length === 0">
-          Nenhum jogador conectado ainda.
-        </div>
+        <div v-if="Object.keys(fichas).length === 0" style="text-align:center;">Aguardando jogadores...</div>
 
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-
-            <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
-
-            <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
+            <h2 style="margin:0;">{{ ficha.nome || '...' }} <small>({{ ficha.tipo }})</small></h2>
+            <div class="stat-controls">
               <button @click="alterarAcoes(id, (ficha._acoes ?? 3) - 1)">−</button>
-
-              <span style="display:inline-block;">
-                {{ ficha._acoes ?? 3 }}
-              </span>
-
+              <span>{{ ficha._acoes ?? 3 }}</span>
               <button @click="alterarAcoes(id, (ficha._acoes ?? 3) + 1)">+</button>
             </div>
-
           </div>
-
-          <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
+          <p>❤️ {{ ficha.vida }} | 💀 {{ ficha.ruina }} | 💪 {{ ficha.atributo }}</p>
+          
           <div style="font-size:12px; margin-top:6px;">
-            <button
-              @click="toggleInventario(id)"
-              style="
-                font-size:10px;
-                padding:2px 6px;
-                border:none;
-                background:linear-gradient(145deg, #1A1B2E, #1C1D33);
-                color:white;
-                border-radius:4px;
-                cursor:pointer;
-                margin-bottom:4px;
-              "
-            >
-              {{ inventarioExpandido[id] ? 'Esconder Inventário' : 'Mostrar Inventário' }}
+            <button @click="toggleInventario(id)" class="btn-mini-dark">
+              {{ inventarioExpandido[id] ? 'Ocultar Inv.' : 'Ver Inv.' }}
             </button>
-
-            <div v-if="inventarioExpandido[id]"
-              style="background:linear-gradient(145deg, #1A1B2E, #1C1D33); padding:6px; border-radius:4px; white-space:pre-wrap; margin-top:4px;">
-              {{ ficha.inventario || '—' }}
-            </div>
+            <div v-if="inventarioExpandido[id]" class="inv-box">{{ ficha.inventario || 'Vazio' }}</div>
           </div>
-
-          <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+          
+          <p class="roll-history">{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : 'Sem rolagens' }}</p>
         </div>
 
-        <div>
-          <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
-            <button
-              @click="adicionarMonstro"
-              style="padding:6px 12px; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-            >
-              Adicionar Monstro
-            </button>
-
-            <button
-              @click="limparMonstros"
-              style="padding:6px 12px; background:#b00000; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;"
-            >
-              Limpar
-            </button>
+        <div style="margin-top:20px; border-top:1px solid #444; paddingTop:10px;">
+          <div style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
+            <button @click="adicionarMonstro" class="btn-primary">Add Monstro</button>
+            <button @click="limparMonstros" class="btn-danger">Limpar</button>
           </div>
 
-          <div v-if="monstros.length === 0" style="text-align:center; opacity:0.6;">
-            Nenhum monstro criado.
-          </div>
-
-          <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
-            <div v-for="(m, index) in monstros" :key="index">
-              <div style="padding:6px; padding-top:0;">
-                <div class="stats-row" style="margin:0;">
-                  <div class="stat-box">
-                    <span class="label">
-                      <span
-                        contenteditable="true"
-                        @input="m.nome = $event.target.innerText; salvarMonstros()"
-                        style="
-                          display:inline-block;
-                          min-width:60px;
-                          padding:2px 4px;
-                          border-radius:3px;
-                          outline:none;
-                        "
-                      >
-                        {{ m.nome }}
-                      </span>
-
-                    </span>
-                    
-                    <div class="stat-controls">
-                      <button @click="m.vida--; salvarMonstros()">−</button>
-                      <span class="value">{{ m.vida }}</span>
-                      <button @click="m.vida++; salvarMonstros()">+</button>
-
-                    </div>
-                  </div>
-                </div>
+          <div class="grid-monsters">
+            <div v-for="(m, index) in monstros" :key="index" class="monster-card">
+              <span contenteditable="true" @input="m.nome = $event.target.innerText; salvarMonstros()" class="editable">{{ m.nome }}</span>
+              <div class="stat-controls mini">
+                <button @click="m.vida--; salvarMonstros()">−</button>
+                <span>{{ m.vida }}</span>
+                <button @click="m.vida++; salvarMonstros()">+</button>
               </div>
             </div>
           </div>
-
         </div>
 
-        <div
-          v-if="page === 'master' && isMestre"
-          style="margin-top:20px; background:linear-gradient(145deg, #1A1B2E, #1C1D33); padding:10px; border-radius:8px; max-height:150px; overflow:auto;"
-        >
-          <h3>Debug:</h3>
-          <div v-for="(log, i) in logs" :key="i" style="font-size:12px;">{{ log }}</div>
+        <div v-if="logs.length" class="debug-box">
+          <div v-for="(log, i) in logs" :key="i">{{ log }}</div>
         </div>
       </div>
     </div>
   `,
 };
+
+// --- CSS Injetado (Para limpar o template) ---
+const styles = document.createElement("style");
+styles.innerHTML = `
+  .sheet, .master { padding: 10px; font-family: sans-serif; }
+  .field { margin-bottom: 10px; }
+  label { display: block; font-size: 0.8em; color: #ccc; margin-bottom: 2px; }
+  input, select, textarea { width: 100%; box-sizing: border-box; background: #222; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; }
+  textarea { resize: vertical; }
+  
+  .stats-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .stat-box { flex: 1; background: #1a1a1a; padding: 8px; border-radius: 6px; border: 1px solid #333; }
+  .stat-controls { display: flex; align-items: center; justify-content: space-between; background: #000; padding: 2px; border-radius: 4px; }
+  .stat-controls button { width: 25px; height: 25px; border: none; background: #333; color: white; cursor: pointer; border-radius: 3px; }
+  .stat-controls .value { font-weight: bold; font-size: 1.1em; }
+  
+  .btn-roll { width: 100%; padding: 10px; border: none; border-radius: 6px; background: linear-gradient(135deg, #7C5CFF, #9B7BFF); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+  .btn-roll:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-roll:disabled { opacity: 0.5; cursor: wait; }
+  
+  .btn-mini { border: none; background: #7C5CFF; color: white; border-radius: 4px; cursor: pointer; font-size: 12px; padding: 2px 6px; }
+  .btn-mini-dark { border: none; background: #333; color: white; border-radius: 4px; cursor: pointer; font-size: 10px; padding: 2px 6px; }
+  .btn-primary { border: none; background: #444; color: white; border-radius: 4px; cursor: pointer; padding: 6px 12px; font-weight: bold; }
+  .btn-danger { border: none; background: #800; color: white; border-radius: 4px; cursor: pointer; padding: 4px 8px; font-weight: bold; font-size: 12px;}
+  
+  .dropdown-results { position: absolute; bottom: 30px; right: 0; background: #222; border: 1px solid #555; padding: 5px; border-radius: 4px; z-index: 100; font-size: 0.9em; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+  
+  .ficha { background: #161616; padding: 10px; margin-bottom: 10px; border-radius: 6px; border-left: 3px solid #7C5CFF; }
+  .ficha p { margin: 4px 0; font-size: 0.9em; color: #ddd; }
+  .inv-box { background: #111; padding: 5px; font-size: 0.8em; margin-top: 4px; white-space: pre-wrap; border-radius: 3px; }
+  .roll-history { font-family: monospace; color: #aaa; font-size: 0.85em; }
+  
+  .grid-monsters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .monster-card { background: #222; padding: 6px; border-radius: 4px; display: flex; flex-direction: column; gap: 4px; }
+  .editable { background: #111; padding: 2px 4px; border-radius: 2px; min-width: 20px; display: inline-block; }
+  
+  .debug-box { margin-top: 20px; font-size: 10px; color: #666; max-height: 100px; overflow-y: auto; background: #000; padding: 5px; }
+  
+  nav { display: flex; gap: 5px; margin-bottom: 10px; }
+  nav button { flex: 1; padding: 8px; background: #222; border: 1px solid #444; color: #888; cursor: pointer; }
+  nav button.active { background: #7C5CFF; color: white; border-color: #7C5CFF; }
+`;
+document.head.appendChild(styles);
 
 Vue.createApp(App).mount("#app");
