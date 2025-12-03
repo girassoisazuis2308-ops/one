@@ -64,7 +64,7 @@ const App = {
         }
 
 
-        // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
+        // CARREGAR MONSTROS SALVOS
        if (roomData.monstros) {
           this.monstros = roomData.monstros.split("|").map(entry => {
             const [nome, vida] = entry.split(",");
@@ -153,11 +153,9 @@ const App = {
       return [];
     },
 
-    // 💡 REVERTIDO: Função salvarFicha volta a ter delay de 700ms por padrão (debounce)
-    async salvarFicha(imediato = false) {
+    // REVERTIDO: Função de salvamento automática (com debounce de 700ms)
+    async salvarFicha() {
       clearTimeout(this.salvarTimeout);
-
-      const delay = imediato ? 0 : 700; 
 
       this.salvarTimeout = setTimeout(async () => {
         try {
@@ -182,27 +180,55 @@ const App = {
             [`ficha-${playerId}`]: payload
           });
 
-          this.log("💾 Ficha salva: " + this.nome + (imediato ? ' (IMEDIATO)' : ''));
+          this.log("💾 Ficha salva: " + this.nome);
         } catch (e) {
           this.log("❌ Erro ao salvar: " + e.message);
         }
-      }, delay);
+      }, 700);
     },
     
-    // 🔥 NOVO MÉTODO: Função dedicada para salvamento manual imediato
+    // NOVO MÉTODO: Função dedicada para salvamento manual imediato (sem debounce)
     async salvarFichaImediatamente() {
-        if (this.salvandoManual) return; // Garante que a função só é chamada uma vez
+        if (this.salvandoManual) return; // Impede cliques múltiplos
         
         this.salvandoManual = true;
-        this.log("Forçando salvamento manual...");
+        this.log("Forçando salvamento manual (IMEDIATO)...");
         
-        // Chamada direta para salvarFicha com 'imediato = true'
-        await this.salvarFicha(true); 
-        
-        // Timeout para reativar o botão (se o jogador precisar clicar de novo)
-        setTimeout(() => {
-            this.salvandoManual = false;
-        }, 1000); 
+        // 1. Limpa qualquer salvamento agendado
+        clearTimeout(this.salvarTimeout);
+
+        try {
+            const playerId = await OBR.player.getId();
+            
+            const payload = {
+                nome: this.nome,
+                vida: this.vida,
+                ruina: this.ruina,
+                tipo: this.tipo,
+                atributo: this.atributo,
+                inventario: this.inventario,
+                ultimoResultado: this.ultimoResultado,
+                ultimasRolagens: this.ultimasRolagens.join("|"),
+            };
+
+            if (this.isMestre) {
+                payload._acoes = this._acoes;
+            }
+
+            // 2. Executa o salvamento imediatamente
+            await OBR.room.setMetadata({
+                [`ficha-${playerId}`]: payload
+            });
+
+            this.log("✅ Salvamento manual concluído.");
+        } catch (e) {
+            this.log("❌ Erro no salvamento manual: " + e.message);
+        } finally {
+            // Reativa o botão após 1 segundo
+            setTimeout(() => {
+                this.salvandoManual = false;
+            }, 1000); 
+        }
     },
 
 
@@ -217,7 +243,7 @@ const App = {
     },
 
 
-    // 🔥 MELHORIA 2: SALVAR MONSTROS
+    // SALVAR MONSTROS
     async salvarMonstros() {
       try {
         const compact = this.monstros
@@ -263,7 +289,7 @@ const App = {
       }
     },
 
-    // 💡 REVERTIDO: Apenas troca a visibilidade
+    // Apenas troca a visibilidade
     async toggleUltimasRolagens() {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
     },
@@ -596,9 +622,8 @@ const App = {
                       <button @click="m.vida++; salvarMonstros()">+</button>
 
                     </div>
-                  </div>
                 </div>
-              </div>
+                </div>
             </div>
           </div>
 
