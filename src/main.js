@@ -21,7 +21,6 @@ const App = {
       monstros: [], // 🔥 MONSTROS (MELHORIA)
       _acoes: 3,
       inventarioExpandido: {},
-      bonusD4: 0,
     };
   },
 
@@ -266,93 +265,27 @@ const App = {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
     },
 
-    aumentarD4() {
-      if (this.bonusD4 < 3) this.bonusD4++;
-    },
-
-    diminuirD4() {
-      if (this.bonusD4 > -3) this.bonusD4--;
-    },
-
-    /**
-     * Roda o dado principal (ex: D10) e aplica o bonusD4:
-     * - se bonusD4 === 0: apenas rola o dado principal (usando rolarDado normalmente)
-     * - se bonusD4 > 0: rola D10 e então rola N vezes D4 (internos), soma tudo
-     * - se bonusD4 < 0: rola D10 e então rola N vezes D4 (internos), subtrai
-     *
-     * Usa apenas rolarDado para todas as rolagens.
-     */
-    async rolarComBonus(max, tipo) {
-      // Rola o D10 (entrada normal)
-      const base = await this.rolarDado(max, tipo);
-    
-      const bonus = this.bonusD4 || 0;
-      if (bonus === 0) {
-        // nada a fazer — já foi salvo/logado por rolarDado
-        return base;
-      }
-    
-      let total = base;
-      const partes = [`${tipo}(${base})`];
-    
-      const steps = Math.min(3, Math.abs(bonus)); // garante max 3
-      for (let i = 0; i < steps; i++) {
-        // rola D4 internamente (suppressEntry = true) para não poluir ultimasRolagens
-        const d4 = await this.rolarDado(4, "D4", true);
-        if (bonus > 0) {
-          total += d4;
-          partes.push(`+D4(${d4})`);
-        } else {
-          total -= d4;
-          partes.push(`-D4(${d4})`);
-        }
-      }
-    
-      if (total < 0) total = 0;
-    
-      // Registra UMA entrada combinada e salva
-      const texto = `${partes.join(" ")} = ${total}`;
-      this.ultimasRolagens.unshift(texto);
-      if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
-    
-      this.ultimoResultado = texto;
-      await this.salvarFicha(false);
-      this.log(`${this.nome} 🎲 ${texto}`);
-    
-      return total;
-    },
-
-
-
-    async rolarDado(max, tipo, suppressEntry = false) {
+    async rolarDado(max, tipo) {
       if (this.rolando) return;
       this.rolando = true;
-    
+
       new Audio('/roll-of-dice.mp3').play();
       await new Promise(res => setTimeout(res, 1000));
-    
-      const valor = Math.floor(Math.random() * max) + 1;
-    
-      if (!suppressEntry) {
-        this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
-        if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
-    
-        this.ultimoResultado = this.ultimasRolagens[0];
-    
-        // 💡 SOLUÇÃO DO BUG: Salva imediatamente (debounce = false)
-        await this.salvarFicha(false);
-    
-        this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
-      } else {
-        // Apenas log interno sem afetar ultimasRolagens / ultimoResultado
-        this.log(`${this.nome} (interno) 🎲 ${tipo}: ${valor}`);
-      }
-    
-      this.rolando = false;
-    
-      return valor;
-    },
 
+      const valor = Math.floor(Math.random() * max) + 1;
+
+      this.ultimasRolagens.unshift(`${tipo} → ${valor}`);
+      if (this.ultimasRolagens.length > 3) this.ultimasRolagens.pop();
+
+      this.ultimoResultado = this.ultimasRolagens[0];
+
+      // 💡 SOLUÇÃO DO BUG: Salva imediatamente (debounce = false)
+      await this.salvarFicha(false);
+
+      this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
+
+      this.rolando = false;
+    },
 
     rolarD10() {
       return this.rolarDado(10, "D10");
@@ -455,35 +388,14 @@ const App = {
 
         <div class="stats-row">
           <div class="stat-box" style="padding: 14px;">
-
-      <!-- CONTROLES +D4 / contador / -D4 (pequenos e discretos) -->
-      <div style="display:flex; justify-content:center; gap:6px; margin-bottom:8px; align-items:center;">
-        <button
-          @click="diminuirD4"
-          style="width:26px; height:26px; border:none; border-radius:6px; background:#444; color:white; font-weight:700; cursor:pointer;">
-          −
-        </button>
-    
-        <div style="min-width:32px; text-align:center; font-weight:700; color:white; background:transparent; padding:4px 6px; border-radius:6px;">
-          {{ bonusD4 }}
-        </div>
-    
-        <button
-          @click="aumentarD4"
-          style="width:26px; height:26px; border:none; border-radius:6px; background:#444; color:white; font-weight:700; cursor:pointer;">
-          +
-        </button>
-      </div>
-    
-      <!-- BOTÃO D10 (agora chama rolarComBonus) -->
-      <button
-        @click="rolarComBonus(10, 'D10')"
-        :disabled="rolando"
-        style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
-      >
-        Rolar D10
-      </button>
-    </div>
+            <button
+              @click="rolarD10"
+              :disabled="rolando"
+              style="width:100%; padding:8px; border-radius:8px; border:none; background:linear-gradient(135deg, #7C5CFF, #9B7BFF); color:white; font-weight:700; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor:pointer;"
+            >
+              Rolar D10
+            </button>
+          </div>
 
           <div class="stat-box" style="padding: 14px;">
             <button
