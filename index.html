@@ -12,9 +12,13 @@
 
       .fichas-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
 }
+      .ficha {
+  min-width: 0; /* garante que a coluna se adapte sem estourar */
+}
+
 
       html, body {
   background: transparent !important;
