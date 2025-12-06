@@ -477,6 +477,8 @@ const App = {
           Nenhum jogador conectado ainda.
         </div>
 
+
+<div class="fichas-grid">
         <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
           <div style="display:flex; justify-content:space-between; align-items:center;">
 
@@ -520,6 +522,8 @@ const App = {
 
           <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
         </div>
+</div>
+
 
         <div>
           <div style="display:flex; justify-content:center; gap:10px; margin-bottom:15px;">
