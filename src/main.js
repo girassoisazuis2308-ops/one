@@ -479,50 +479,74 @@ const App = {
 
 
 <div class="fichas-grid">
-        <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+  <div v-for="(ficha, id) in fichas" :key="id" class="ficha">
 
-            <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;">{{ ficha.nome || 'Sem nome' }} | {{ ficha.tipo }}</h2>
+    </div>
 
-            <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
-              <button @click="alterarAcoes(id, (ficha._acoes ?? 3) - 1)">−</button>
+    <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
 
-              <span style="display:inline-block;">
-                {{ ficha._acoes ?? 3 }}
-              </span>
+    <!-- BOTÃO DE INVENTÁRIO + AÇÕES LADO A LADO -->
+    <div
+      style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        font-size:12px;
+        margin-top:6px;
+      "
+    >
 
-              <button @click="alterarAcoes(id, (ficha._acoes ?? 3) + 1)">+</button>
-            </div>
+      <!-- Botão de inventário -->
+      <button
+        @click="toggleInventario(id)"
+        style="
+          font-size:10px;
+          padding:2px 6px;
+          border:none;
+          background:linear-gradient(145deg, #1A1B2E, #1C1D33);
+          color:white;
+          border-radius:4px;
+          cursor:pointer;
+          margin-right:6px;
+        "
+      >
+        {{ inventarioExpandido[id] ? 'Esconder Inventário' : 'Mostrar Inventário' }}
+      </button>
 
-          </div>
+      <!-- Controles de Ações -->
+      <div class="stat-controls" style="display:flex; align-items:center; gap:6px;">
+        <button @click="alterarAcoes(id, (ficha._acoes ?? 3) - 1)">−</button>
 
-          <p>Vida: {{ ficha.vida }} | Ruina: {{ ficha.ruina }} | {{ ficha.atributo }}</p>
-          <div style="font-size:12px; margin-top:6px;">
-            <button
-              @click="toggleInventario(id)"
-              style="
-                font-size:10px;
-                padding:2px 6px;
-                border:none;
-                background:linear-gradient(145deg, #1A1B2E, #1C1D33);
-                color:white;
-                border-radius:4px;
-                cursor:pointer;
-                margin-bottom:4px;
-              "
-            >
-              {{ inventarioExpandido[id] ? 'Esconder Inventário' : 'Mostrar Inventário' }}
-            </button>
+        <span style="display:inline-block;">
+          {{ ficha._acoes ?? 3 }}
+        </span>
 
-            <div v-if="inventarioExpandido[id]"
-              style="background:linear-gradient(145deg, #1A1B2E, #1C1D33); padding:6px; border-radius:4px; white-space:pre-wrap; margin-top:4px;">
-              {{ ficha.inventario || '—' }}
-            </div>
-          </div>
+        <button @click="alterarAcoes(id, (ficha._acoes ?? 3) + 1)">+</button>
+      </div>
 
-          <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
-        </div>
+    </div>
+
+    <!-- Inventário expandido -->
+    <div
+      v-if="inventarioExpandido[id]"
+      style="
+        background:linear-gradient(145deg, #1A1B2E, #1C1D33);
+        padding:6px;
+        border-radius:4px;
+        white-space:pre-wrap;
+        margin-top:4px;
+      "
+    >
+      {{ ficha.inventario || '—' }}
+    </div>
+
+    <p>{{ ficha.ultimasRolagens.length ? ficha.ultimasRolagens.join(' | ') : '—' }}</p>
+
+  </div>
 </div>
+
 
 
         <div>
