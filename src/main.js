@@ -490,7 +490,6 @@ const App = {
     <div
       style="
         display:flex;
-        justify-content:space-between;
         align-items:center;
         font-size:12px;
         margin-top:6px;
@@ -501,7 +500,7 @@ const App = {
       <button
         @click="toggleInventario(id)"
         style="
-          font-size:10px;
+          font-size:15px;
           padding:2px 6px;
           border:none;
           background:linear-gradient(145deg, #1A1B2E, #1C1D33);
