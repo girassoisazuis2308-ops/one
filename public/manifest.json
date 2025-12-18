@@ -1,10 +1,10 @@
 {
-  "name": "ONE Sheet",
+  "name": "VRAEN RPG",
   "version": "1.0.0",
   "manifest_version": 1,
-  "author": "Bonykou",
+  "author": "Bony",
   "action": {
-    "title": "ONE Sheet",
+    "title": "VRAEN RPG",
     "icon": "/icon.svg",
     "popover": "/",
     "width": 450,
