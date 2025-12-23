@@ -1,47 +1,54 @@
 import OBR from "@owlbear-rodeo/sdk";
 
+// Aplicação principal Vue
 const App = {
+  // Estado reativo da aplicação
   data() {
     return {
-      page: "player",
-      nome: "",
-      vida: 3,
-      ruina: 3,
-      tipo: "Combatente",
-      atributo: "Força",
-      inventario: "",
-      ultimoResultado: "",
-      ultimasRolagens: [],
-      ultimasRolagensVisiveis: false,
-      fichas: {},
-      salvarTimeout: null,
-      logs: [],
-      isMestre: false,
-      rolando: false,
-      monstros: [], // 🔥 MONSTROS (MELHORIA)
-      _acoes: 3,
-      inventarioExpandido: {},
+      page: "player",                 // Página atual (player/master)
+      nome: "",                       // Nome do personagem
+      vida: 3,                        // Vida do personagem
+      ruina: 3,                       // Ruína do personagem
+      tipo: "Combatente",             // Tipo/Função
+      atributo: "Força",              // Atributo principal
+      inventario: "",                 // Texto do inventário
+      ultimoResultado: "",            // Último resultado de dado
+      ultimasRolagens: [],            // Histórico de rolagens
+      ultimasRolagensVisiveis: false, // Toggle de histórico
+      fichas: {},                     // Todas as fichas da sala
+      salvarTimeout: null,            // Controle de debounce
+      logs: [],                       // Logs de debug
+      isMestre: false,                // Se o jogador é GM
+      rolando: false,                 // Trava durante rolagem
+      monstros: [],                   // Lista de monstros
+      _acoes: 3,                      // Ações disponíveis
+      inventarioExpandido: {},        // Controle de inventário aberto
     };
   },
 
+  // Executa ao montar o app
   mounted() {
     this.log("⏳ Aguardando OBR...");
 
+    // Aguarda o SDK do Owlbear
     OBR.onReady(async () => {
       this.log("✅ OBR carregado!");
 
       try {
+        // Obtém ID do jogador
         const playerId = await OBR.player.getId();
         this.log("🎮 Meu ID: " + playerId);
 
+        // Verifica papel (Player ou GM)
         const role = await OBR.player.getRole();
         this.isMestre = role === "GM";
         this.log("🎩 Papel detectado: " + role);
 
-        // Carregar todas as fichas já existentes
+        // Carrega metadados da sala
         const roomData = await OBR.room.getMetadata();
         const fichasAtuais = {};
 
+        // Carrega fichas existentes
         for (const [key, value] of Object.entries(roomData)) {
           if (key.startsWith("ficha-")) {
             value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
@@ -51,7 +58,7 @@ const App = {
 
         this.fichas = fichasAtuais;
 
-        // Carregar minha própria ficha
+        // Carrega ficha do próprio jogador
         const minhaFicha = roomData[`ficha-${playerId}`];
 
         if (minhaFicha) {
@@ -62,8 +69,7 @@ const App = {
           this._acoes = 3;
         }
 
-
-        // 🔥 MELHORIA 3: CARREGAR MONSTROS SALVOS
+        // Carrega monstros salvos
         if (roomData.monstros) {
           this.monstros = roomData.monstros.split("|").map(entry => {
             const [nome, vida] = entry.split(",");
@@ -74,10 +80,11 @@ const App = {
           });
         }
 
-        // Listeners ao vivo para o Mestre
+        // Listener de mudanças no metadata
         OBR.room.onMetadataChange((metadata) => {
           const novas = {};
         
+          // Atualiza fichas
           for (const [key, value] of Object.entries(metadata)) {
             if (key.startsWith("ficha-")) {
               value.ultimasRolagens = this.normalizarRolagens(value.ultimasRolagens);
@@ -85,7 +92,7 @@ const App = {
             }
           }
         
-          // Mescla sem sobrescrever campos importantes
+          // Mescla dados sem perder estado local
           for (const [key, ficha] of Object.entries(novas)) {
             if (!this.fichas[key]) {
               this.fichas[key] = {
@@ -118,24 +125,22 @@ const App = {
               };
             });
           }
-
         });
       } catch (e) {
         this.log("❌ Erro na inicialização: " + (e.message || e));
       }
     });
-
-
   },
 
+  // Observadores reativos
   watch: {
     nome: "salvarFicha",
     vida(value) {
-      if (value < 0) this.vida = 0; // 🔥 MELHORIA 1
+      if (value < 0) this.vida = 0; // Impede vida negativa
       this.salvarFicha();
     },
     ruina(value) {
-      if (value < 0) this.ruina = 0; // 🔥 MELHORIA 1
+      if (value < 0) this.ruina = 0; // Impede ruína negativa
       this.salvarFicha();
     },
     tipo: "salvarFicha",
@@ -144,6 +149,7 @@ const App = {
   },
 
   methods: {
+    // Normaliza histórico de rolagens
     normalizarRolagens(v) {
       if (!v) return [];
       if (Array.isArray(v)) return v;
@@ -151,14 +157,11 @@ const App = {
       return [];
     },
 
-    /**
-     * NOVO MÉTODO PRIVADO: Executa a operação real de setMetadata.
-     */
+    // Salva ficha no metadata da sala
     async _salvarFichaNoRoom() {
       try {
         const playerId = await OBR.player.getId();
         
-        // Monta o objeto sem _acoes quando não for Mestre
         const payload = {
           nome: this.nome,
           vida: this.vida,
@@ -170,7 +173,7 @@ const App = {
           ultimasRolagens: this.ultimasRolagens.join("|"),
         };
 
-        // Apenas o Mestre envia/atualiza _acoes
+        // Apenas o GM salva ações
         if (this.isMestre) {
           payload._acoes = this._acoes;
         }
@@ -185,18 +188,13 @@ const App = {
       }
     },
 
-    /**
-     * MÉTODO PÚBLICO: Gerencia o salvamento com debounce (padrão) ou imediato.
-     * @param {boolean} debounce - Se deve aguardar 700ms (true) ou salvar imediatamente (false).
-     */
+    // Gerencia salvamento com debounce
     async salvarFicha(debounce = true) {
       if (!debounce) {
-        // Ação Crítica (Rolagem): Salva imediatamente.
         await this._salvarFichaNoRoom();
         return;
       }
 
-      // Ações não-críticas (watchers): Aplica debounce.
       clearTimeout(this.salvarTimeout);
 
       this.salvarTimeout = setTimeout(async () => {
@@ -204,18 +202,19 @@ const App = {
       }, 700);
     },
 
+    // Alterna páginas
     trocarPagina(p) {
       this.page = p;
     },
 
+    // Abre/fecha inventário do GM
     toggleInventario(id) {
       this.$set
         ? this.$set(this.inventarioExpandido, id, !this.inventarioExpandido[id])
         : (this.inventarioExpandido[id] = !this.inventarioExpandido[id]);
     },
 
-
-    // 🔥 MELHORIA 2: SALVAR MONSTROS
+    // Salva monstros no metadata
     async salvarMonstros() {
       try {
         const compact = this.monstros
@@ -230,17 +229,20 @@ const App = {
       }
     },
 
+    // Adiciona novo monstro
     adicionarMonstro() {
       this.monstros.push({ vida: 10 });
       this.salvarMonstros();
     },
 
+    // Remove todos os monstros
     limparMonstros() {
       if (!confirm("Deseja remover todos os monstros?")) return;
       this.monstros = [];
       this.salvarMonstros();
     },
 
+    // Limpa todas as fichas (GM)
     async limparFichas() {
       if (!this.isMestre) return;
       if (!confirm("Tem certeza que deseja limpar todas as fichas dos jogadores?")) return;
@@ -261,10 +263,12 @@ const App = {
       }
     },
 
+    // Toggle histórico de rolagens
     toggleUltimasRolagens() {
       this.ultimasRolagensVisiveis = !this.ultimasRolagensVisiveis;
     },
 
+    // Rola um dado genérico
     async rolarDado(max, tipo) {
       if (this.rolando) return;
       this.rolando = true;
@@ -279,7 +283,6 @@ const App = {
 
       this.ultimoResultado = this.ultimasRolagens[0];
 
-      // 💡 SOLUÇÃO DO BUG: Salva imediatamente (debounce = false)
       await this.salvarFicha(false);
 
       this.log(`${this.nome} 🎲 ${tipo}: ${valor}`);
@@ -287,6 +290,7 @@ const App = {
       this.rolando = false;
     },
 
+    // Atalhos de dados
     rolarD10() {
       return this.rolarDado(10, "D10");
     },
@@ -295,16 +299,17 @@ const App = {
       return this.rolarDado(4, "D4");
     },
 
+    // Log interno
     log(msg) {
       this.logs.unshift(new Date().toLocaleTimeString() + " " + msg);
       if (this.logs.length > 20) this.logs.pop();
     },
 
+    // GM altera ações de um jogador
     async alterarAcoes(id, novoValor) {
       const fichaAtual = this.fichas[id];
       if (!fichaAtual) return;
 
-      // 🔥 Cria um clone completo da ficha ANTES do envio
       const fichaParaSalvar = {
         nome: fichaAtual.nome,
         vida: fichaAtual.vida,
@@ -322,7 +327,6 @@ const App = {
           [id]: fichaParaSalvar
         });
 
-        // Atualiza localmente sem sobrescrever a ficha inteira
         this.fichas[id]._acoes = novoValor;
 
         this.log(`🔧 GM alterou ações de ${fichaAtual.nome} para ${novoValor}`);
@@ -331,7 +335,8 @@ const App = {
       }
     }
   },
-  
+
+  // Template HTML (interface)
   template: `
     <div>
       <nav>
